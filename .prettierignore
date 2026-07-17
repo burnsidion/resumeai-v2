@@ -1,0 +1,9 @@
+.data
+.nuxt
+.nitro
+.output
+coverage
+dist
+node_modules
+pnpm-lock.yaml
+

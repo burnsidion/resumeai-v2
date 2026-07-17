@@ -1,0 +1,69 @@
+# ResumAI V2
+
+ResumAI V2 is a job-application workspace that helps job seekers tailor truthful
+resumes, track applications, and preserve the exact resume submitted for each
+role.
+
+This repository is a fresh Nuxt application. The legacy `jobgoblin` and
+`jobgoblin-backend` repositories are behavioral references only and are not
+dependencies of V2.
+
+## Prerequisites
+
+- Node.js 24.18.0
+- pnpm 10.9.0 through Corepack
+
+With `nvm` installed:
+
+```sh
+nvm install 24.18.0
+nvm use 24.18.0
+corepack enable
+corepack prepare pnpm@10.9.0 --activate
+```
+
+## Local setup
+
+```sh
+cp .env.example .env
+pnpm install --frozen-lockfile
+pnpm dev
+```
+
+The application is available at `http://localhost:3000`.
+
+`NUXT_PUBLIC_APP_NAME` is optional and defaults to `ResumAI`. An explicitly empty
+value is rejected with a clear configuration error.
+
+## Commands
+
+```sh
+pnpm dev           # Start the development server
+pnpm build         # Create a production build
+pnpm preview       # Preview the production build
+pnpm typecheck     # Run Nuxt and Vue TypeScript checks
+pnpm lint          # Check code with ESLint
+pnpm lint:fix      # Apply safe ESLint fixes
+pnpm format        # Format supported files
+pnpm format:check  # Check formatting without modifying files
+pnpm test          # Run all tests once
+pnpm test:watch    # Run tests in watch mode
+```
+
+## Ownership
+
+- `app/` owns browser-facing presentation and interaction.
+- `config/` owns foundation-level configuration validation.
+- `test/unit/` owns fast tests that do not require Nuxt runtime behavior.
+- `test/nuxt/` owns tests requiring the Nuxt runtime.
+- `docs/product/` owns durable product behavior.
+- `docs/architecture/` owns durable architecture decisions.
+
+New directories should be introduced only when a real implementation slice
+needs them. Product rules, persistence, providers, and server abstractions are
+intentionally absent from this foundation.
+
+## Documentation
+
+- [MVP workflow](docs/product/mvp-workflow.md)
+- [Architecture overview](docs/architecture/overview.md)
