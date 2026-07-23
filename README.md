@@ -26,6 +26,12 @@ corepack prepare pnpm@10.9.0 --activate
 
 ```sh
 cp .env.example .env
+```
+
+Add the project URL and publishable key supplied by Ian to `.env`, then install
+dependencies and start Nuxt:
+
+```sh
 pnpm install --frozen-lockfile
 pnpm dev
 ```
@@ -34,6 +40,10 @@ The application is available at `http://localhost:3000`.
 
 `NUXT_PUBLIC_APP_NAME` is optional and defaults to `ResumAI`. An explicitly empty
 value is rejected with a clear configuration error.
+
+`NUXT_PUBLIC_SUPABASE_URL` and `NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are
+required public configuration. See the [Supabase Auth setup](docs/development/supabase-auth.md)
+for the hosted-project ownership boundary and local setup instructions.
 
 ## Commands
 
@@ -58,6 +68,8 @@ pnpm test:watch    # Run tests in watch mode
 - `test/nuxt/` owns tests requiring the Nuxt runtime.
 - `docs/product/` owns durable product behavior.
 - `docs/architecture/` owns durable architecture decisions.
+- `docs/development/` owns developer setup and external-service configuration
+  guidance.
 
 New directories should be introduced only when a real implementation slice
 needs them. Product rules, persistence, providers, and server abstractions are
@@ -67,3 +79,4 @@ intentionally absent from this foundation.
 
 - [MVP workflow](docs/product/mvp-workflow.md)
 - [Architecture overview](docs/architecture/overview.md)
+- [Supabase Auth setup](docs/development/supabase-auth.md)

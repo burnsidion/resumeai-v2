@@ -12,6 +12,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       appName: environment.NUXT_PUBLIC_APP_NAME,
+      supabasePublishableKey: environment.NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      supabaseUrl: environment.NUXT_PUBLIC_SUPABASE_URL,
     },
   },
   typescript: {
