@@ -67,3 +67,33 @@ trusts browser session state or user-editable metadata.
 Supabase CLI and local Supabase configuration are deliberately absent. They may
 be reconsidered only if the authentication integration-test work in OWL-14
 demonstrates a concrete need.
+
+## OWL-12 implementation notes
+
+The approved authentication exploration remains the visual source of truth:
+
+- [ResumAI V2 — OWL-12 Authentication Exploration](https://www.figma.com/design/nTdovxL6aEm5xYseRelD3X/ResumAI-V2-%E2%80%94-OWL-12-Authentication-Exploration?node-id=9-531)
+
+The Figma MCP Starter-plan limit prevented node-level design-context extraction
+during implementation. The implementation therefore uses the approved frames
+and the recorded dark color, typography, spacing, radius, elevation, and state
+decisions that the team had already reviewed. These deliberate deviations keep
+the behavior honest and within OWL-12:
+
+- Password visibility uses accessible **Show** and **Hide** text instead of
+  introducing an unverified icon asset.
+- The verification-pending screen displays the submitted email only during the
+  current browser visit. A refresh falls back to generic copy rather than
+  placing an email address in the URL.
+- Resending confirmation email is not exposed because OWL-12 does not define
+  resend behavior or rate-limit handling.
+- The approved Forgot Password design is preserved in Figma but is not linked
+  or implemented. Password recovery is deferred to a dedicated issue.
+- Signout and the authenticated dashboard presentation remain owned by OWL-13.
+  OWL-12 includes only the smallest protected `/dashboard` placeholder needed
+  to verify route behavior.
+
+The hosted default email provider is suitable only for limited development
+testing: it sends to authorized project-team addresses and is subject to a
+low provider rate limit. Production email delivery configuration remains
+outside OWL-12.

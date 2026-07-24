@@ -31,3 +31,27 @@ export type AuthenticationResolution =
       authenticated: false
       error: AuthenticationError
     }
+
+export type AuthenticationSessionState =
+  | {
+      authenticated: true
+      user: AuthenticatedUser
+    }
+  | {
+      authenticated: false
+    }
+
+export type AuthenticationPageErrorCode =
+  | 'authentication-failed'
+  | 'authentication-unavailable'
+  | 'invalid-confirmation-link'
+
+export type AuthenticationCallbackResult =
+  | {
+      completed: true
+      redirectTo: string
+    }
+  | {
+      completed: false
+      errorCode: AuthenticationPageErrorCode
+    }

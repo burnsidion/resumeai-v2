@@ -6,6 +6,11 @@ import type { SupabaseAuthenticationConfiguration } from '~~/shared/authenticati
 export type BrowserSupabaseClientFactory = (
   supabaseUrl: string,
   supabasePublishableKey: string,
+  options: {
+    auth: {
+      detectSessionInUrl: false
+    }
+  },
 ) => SupabaseClient
 
 export function createAuthenticationBrowserClient(
@@ -15,5 +20,10 @@ export function createAuthenticationBrowserClient(
   return clientFactory(
     configuration.supabaseUrl,
     configuration.supabasePublishableKey,
+    {
+      auth: {
+        detectSessionInUrl: false,
+      },
+    },
   )
 }

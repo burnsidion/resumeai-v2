@@ -1,16 +1,38 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-ink: #17211b;
-  --color-mist: #f4f7f4;
-  --color-pine: #24543d;
+  --color-canvas: #07090d;
+  --color-panel: #0b0f15;
+  --color-surface: #11161e;
+  --color-raised: #171d27;
+  --color-high: #1d2531;
+  --color-foreground: #f2f6f8;
+  --color-muted: #a5b0bc;
+  --color-line: #293445;
+  --color-accent: #59d8e5;
+  --color-focus: #8aeaf0;
+  --color-success: #49d69c;
+  --color-danger: #ff7a86;
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 20rem;
+    background: var(--color-canvas);
+    color-scheme: dark;
+  }
+
   body {
+    min-height: 100vh;
     margin: 0;
-    background: var(--color-mist);
-    color: var(--color-ink);
+    background: var(--color-canvas);
+    color: var(--color-foreground);
     font-family:
       Inter,
       ui-sans-serif,
@@ -19,5 +41,63 @@
       BlinkMacSystemFont,
       'Segoe UI',
       sans-serif;
+    text-rendering: optimizeLegibility;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+    color: var(--color-foreground);
+  }
+}
+
+@layer utilities {
+  .auth-elevation {
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 4%) inset,
+      0 24px 80px rgb(0 0 0 / 34%);
+  }
+
+  .auth-grid {
+    background-image:
+      linear-gradient(rgb(89 216 229 / 4%) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(89 216 229 / 4%) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: linear-gradient(to bottom, black, transparent 82%);
+  }
+
+  .auth-spinner {
+    animation: auth-spin 800ms linear infinite;
+  }
+}
+
+@keyframes auth-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

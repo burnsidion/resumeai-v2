@@ -79,6 +79,11 @@ describe('Supabase authentication client configuration', () => {
     expect(clientFactory).toHaveBeenCalledWith(
       configuration.supabaseUrl,
       configuration.supabasePublishableKey,
+      {
+        auth: {
+          detectSessionInUrl: false,
+        },
+      },
     )
   })
 
