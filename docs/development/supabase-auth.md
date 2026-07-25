@@ -9,8 +9,8 @@ delete, or reconfigure the hosted project automatically.
 This document records the project inputs required by the application. OWL-11
 owns the browser and request-scoped server clients, SSR cookie refresh, trusted
 server identity resolution, safe redirects, and provider-error translation.
-Authentication pages, callback handling, and protected product routes remain
-owned by later OWL-9 child issues.
+OWL-12 owns the authentication pages and confirmation callback. OWL-13 owns the
+temporary authenticated dashboard and current-session signout behavior.
 
 ## Hosted project configuration
 
@@ -22,8 +22,8 @@ Configure the hosted project in the Supabase Dashboard with these settings:
 - Set the development Site URL to `http://localhost:3000`.
 - Add `http://localhost:3000/auth/callback` as an exact allowed redirect URL.
 
-The `/auth/callback` path is reserved for the later confirmation flow. OWL-11
-does not implement that route.
+The `/auth/callback` path handles the hosted email-confirmation flow introduced
+after OWL-11 and must remain an exact allowed redirect URL.
 
 Production and deployment-preview URLs remain deferred until a hosting platform
 and deployment URL are approved. Add exact production redirect paths at that
@@ -89,11 +89,35 @@ the behavior honest and within OWL-12:
   resend behavior or rate-limit handling.
 - The approved Forgot Password design is preserved in Figma but is not linked
   or implemented. Password recovery is deferred to a dedicated issue.
-- Signout and the authenticated dashboard presentation remain owned by OWL-13.
-  OWL-12 includes only the smallest protected `/dashboard` placeholder needed
-  to verify route behavior.
+- The dashboard remains intentionally temporary and contains no profile or
+  product data.
 
 The hosted default email provider is suitable only for limited development
 testing: it sends to authorized project-team addresses and is subject to a
 low provider rate limit. Production email delivery configuration remains
 outside OWL-12.
+
+## OWL-13 authenticated dashboard and signout
+
+The temporary `/dashboard` route is protected by the existing authenticated
+route middleware. It displays only the email address returned by the trusted
+server session resolver, when available, and a signout control. It does not
+read profile metadata or introduce product-specific dashboard behavior.
+
+Signout follows the existing authentication boundaries:
+
+1. The browser sends `POST /api/auth/sign-out` without accessing Supabase
+   directly.
+2. The route creates a request-scoped server client and signs out with
+   `scope: 'local'`, limiting the action to the current browser session.
+3. The response remains private and returns only a normalized result or
+   internally mapped error code.
+4. The browser resolves `/api/auth/session` again before deciding what to show.
+   An unauthenticated result redirects to `/sign-in`; an error is shown only
+   when the trusted resolver still reports an active session.
+
+The post-signout resolution step prevents a late provider error from replacing
+a successful signout with a misleading error screen. Reopening or refreshing
+`/dashboard` after signout redirects through the same protected-route boundary.
+No service-role key, profile data, database object, or product authorization
+rule is involved in this flow.
