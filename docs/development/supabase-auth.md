@@ -11,6 +11,8 @@ owns the browser and request-scoped server clients, SSR cookie refresh, trusted
 server identity resolution, safe redirects, and provider-error translation.
 OWL-12 owns the authentication pages and confirmation callback. OWL-13 owns the
 temporary authenticated dashboard and current-session signout behavior.
+OWL-14 owns the isolated local authentication test environment, complete
+browser journey, CI integration, and reproducible test instructions.
 
 ## Hosted project configuration
 
@@ -64,9 +66,10 @@ request-scoped client that reads and writes SSR cookies. Server authorization
 must use `resolveAuthenticatedUser`, which validates signed claims and never
 trusts browser session state or user-editable metadata.
 
-Supabase CLI and local Supabase configuration are deliberately absent. They may
-be reconsidered only if the authentication integration-test work in OWL-14
-demonstrates a concrete need.
+The Supabase CLI is included only for OWL-14's isolated authentication tests.
+The committed `supabase/config.toml` is not linked to the hosted project and
+does not contain hosted credentials or create product tables, migrations, seed
+data, storage resources, or application policies.
 
 ## OWL-12 implementation notes
 
@@ -121,3 +124,105 @@ a successful signout with a misleading error screen. Reopening or refreshing
 `/dashboard` after signout redirects through the same protected-route boundary.
 No service-role key, profile data, database object, or product authorization
 rule is involved in this flow.
+
+## Isolated authentication integration tests
+
+The Playwright authentication journey runs against the committed local
+Supabase configuration, never the hosted project. It uses:
+
+- Supabase Auth at `http://127.0.0.1:54321`
+- Mailpit at `http://127.0.0.1:54324`
+- Nuxt at `http://127.0.0.1:3000`
+- A generated local publishable key
+
+Every accepted integration-test URL must use HTTP and a loopback hostname.
+Playwright rejects hosted or other non-loopback Supabase URLs before starting
+Nuxt.
+
+The local Auth configuration enables email/password signup and email
+confirmation so the test exercises the same user-facing confirmation boundary
+as the hosted project. It disables anonymous sign-in and does not introduce
+profiles, product schema, migrations, RLS, storage, or privileged credentials.
+
+### Local prerequisites
+
+Install the pinned repository dependencies and Playwright's Chromium browser:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm exec playwright install chromium
+```
+
+Start Docker Desktop or another Docker-compatible runtime. Then start the
+isolated stack while displaying only the public values required by the test:
+
+```sh
+set -o pipefail
+pnpm exec supabase start -o env 2>&1 \
+  | grep -E '^(API_URL|PUBLISHABLE_KEY)='
+```
+
+Do not copy or use any generated secret or service-role value. Copy only the
+displayed `API_URL` and `PUBLISHABLE_KEY` into the test command:
+
+```sh
+NUXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 \
+NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_replace_with_local_value \
+pnpm test:integration
+```
+
+Always destroy the isolated stack afterward, including when the test fails:
+
+```sh
+pnpm exec supabase stop --no-backup
+```
+
+The cleanup removes disposable users, sessions, captured emails, and local
+database state. These tests must not use a personal account, hosted credentials,
+or persistent user data.
+
+### Covered journey
+
+The automated browser journey verifies:
+
+1. Signup with unique disposable credentials.
+2. The email-verification-pending state.
+3. Delivery of the confirmation email to Mailpit.
+4. The guarded confirmation callback and trusted server session.
+5. Explicit password sign-in.
+6. Protected dashboard access and identity display.
+7. Session persistence across a refresh and subsequent server request.
+8. Current-session signout.
+9. An unauthenticated session afterward.
+10. Redirect away from the protected dashboard.
+
+The test reads only the matching disposable email from Mailpit. Confirmation
+links are validated as loopback-only before navigation. Playwright traces,
+screenshots, and videos are disabled so credentials, cookies, and confirmation
+links are not retained as CI artifacts.
+
+### CI lifecycle and credential boundary
+
+GitHub Actions installs the pinned CLI and Chromium, starts the isolated stack,
+and exports only its local API URL and publishable key to subsequent steps. CLI
+output containing generated private values is discarded rather than logged or
+stored.
+
+The final cleanup step uses `if: ${{ always() }}` and
+`supabase stop --no-backup`. It therefore runs after successful tests and after
+startup, Nuxt, Chromium, or Playwright failures. No hosted Supabase secret is
+configured in GitHub Actions.
+
+### Known limitations and deferred hardening
+
+- The test uses Chromium only and runs serially with one disposable user at a
+  time.
+- It validates the local email-delivery path, not hosted SMTP deliverability.
+- Token expiration, manually corrupted tokens, and remotely revoked sessions
+  remain deliberately deferred.
+- Password recovery, social login, MFA, account deletion, and production email
+  configuration remain outside the OWL-9 authentication foundation.
+- Supabase CLI URLs are loopback-only, but its Docker port publishing may bind
+  to all host interfaces. Run the local stack only on a trusted development
+  machine and network, and stop it immediately after testing. The CI runner is
+  isolated and ephemeral.

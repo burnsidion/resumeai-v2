@@ -12,6 +12,7 @@ dependencies of V2.
 
 - Node.js 24.18.0
 - pnpm 10.9.0 through Corepack
+- A Docker-compatible container runtime for authentication integration tests
 
 With `nvm` installed:
 
@@ -57,8 +58,14 @@ pnpm lint:fix      # Apply safe ESLint fixes
 pnpm format        # Format supported files
 pnpm format:check  # Check formatting without modifying files
 pnpm test          # Run all tests once
+pnpm test:integration # Run browser authentication tests against local Supabase
 pnpm test:watch    # Run tests in watch mode
 ```
+
+The integration command requires the isolated local Supabase environment and
+its public test configuration. It never uses the hosted project. See
+[Supabase Auth setup](docs/development/supabase-auth.md#isolated-authentication-integration-tests)
+for the complete start, test, and cleanup sequence.
 
 ## Ownership
 
@@ -66,6 +73,9 @@ pnpm test:watch    # Run tests in watch mode
 - `config/` owns foundation-level configuration validation.
 - `test/unit/` owns fast tests that do not require Nuxt runtime behavior.
 - `test/nuxt/` owns tests requiring the Nuxt runtime.
+- `test/integration/` owns browser journeys against isolated local services.
+- `supabase/` owns the unlinked local service configuration used by those
+  integration tests.
 - `docs/product/` owns durable product behavior.
 - `docs/architecture/` owns durable architecture decisions.
 - `docs/development/` owns developer setup and external-service configuration

@@ -10,6 +10,12 @@ node_modules
 
 # Test output
 coverage
+playwright-report
+test-results
+
+# Supabase CLI state
+supabase/.branches
+supabase/.temp
 
 # Logs
 *.log
@@ -24,4 +30,3 @@ logs
 .DS_Store
 .fleet
 .idea
-
