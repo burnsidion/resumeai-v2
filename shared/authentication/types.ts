@@ -55,3 +55,7 @@ export type AuthenticationCallbackResult =
       completed: false
       errorCode: AuthenticationPageErrorCode
     }
+
+export interface AuthenticationSignOutResult {
+  signedOut: true
+}
