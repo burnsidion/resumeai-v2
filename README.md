@@ -78,6 +78,8 @@ for the complete start, test, and cleanup sequence.
   integration tests.
 - `docs/product/` owns durable product behavior.
 - `docs/architecture/` owns durable architecture decisions.
+- `docs/design/` owns approved visual references and implementation-facing
+  interface specifications.
 - `docs/development/` owns developer setup and external-service configuration
   guidance.
 
@@ -89,4 +91,5 @@ intentionally absent from this foundation.
 
 - [MVP workflow](docs/product/mvp-workflow.md)
 - [Architecture overview](docs/architecture/overview.md)
+- [Dashboard design specification](docs/design/dashboard.md)
 - [Supabase Auth setup](docs/development/supabase-auth.md)
