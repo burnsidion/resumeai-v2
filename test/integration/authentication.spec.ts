@@ -143,6 +143,7 @@ test('completes the disposable-user authentication journey', async ({
   await expect(page.getByText(credentials.email)).toBeVisible()
   await expectAuthenticatedSession(context, credentials.email)
 
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeEnabled()
   await signOut(page)
   await expectSignedOutSession(context)
 

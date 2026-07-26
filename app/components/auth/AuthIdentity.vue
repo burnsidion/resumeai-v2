@@ -8,10 +8,15 @@ const props = defineProps<{
 
 const headingId = useId()
 const error = ref<AuthenticationError | null>(null)
+const hydrated = ref(false)
 const pending = ref(false)
 
+onMounted(() => {
+  hydrated.value = true
+})
+
 const handleSignOut = async () => {
-  if (pending.value) {
+  if (!hydrated.value || pending.value) {
     return
   }
 
@@ -55,7 +60,7 @@ const handleSignOut = async () => {
       <AuthNotice v-if="error" :message="error.message" tone="danger" />
       <button
         type="button"
-        :disabled="pending"
+        :disabled="!hydrated || pending"
         class="border-line bg-raised text-foreground hover:bg-high focus-visible:outline-focus disabled:text-muted flex h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed"
         @click="handleSignOut"
       >
