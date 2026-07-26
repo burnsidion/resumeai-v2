@@ -10,6 +10,10 @@ const headingId = useId()
 const error = ref<AuthenticationError | null>(null)
 const hydrated = ref(false)
 const pending = ref(false)
+const accountLabel = computed(() => props.email ?? 'Authenticated account')
+const accountInitial = computed(
+  () => props.email?.trim().charAt(0).toUpperCase() || 'A',
+)
 
 onMounted(() => {
   hydrated.value = true
@@ -32,36 +36,28 @@ const handleSignOut = async () => {
 </script>
 
 <template>
-  <section
-    :aria-labelledby="headingId"
-    class="auth-elevation bg-surface border-line w-full max-w-lg rounded-[1.25rem] border p-6 sm:p-8"
-  >
-    <p
-      class="text-success mb-3 text-xs font-semibold tracking-[0.16em] uppercase"
-    >
-      Signed in
-    </p>
-    <h1
-      :id="headingId"
-      class="text-[1.75rem] leading-tight font-semibold tracking-[-0.035em]"
-    >
-      Your session is active.
-    </h1>
-    <div class="border-line mt-7 border-t pt-6">
-      <template v-if="email">
-        <p class="text-muted text-sm">Signed in as</p>
-        <p class="mt-2 text-sm font-medium break-all">{{ email }}</p>
-      </template>
-      <p v-else class="text-muted text-sm leading-6">
-        Your authenticated account is ready.
-      </p>
+  <section :aria-labelledby="headingId" class="border-line border-t p-4">
+    <div class="flex items-center gap-3">
+      <span
+        class="border-accent text-accent grid size-10 shrink-0 place-items-center rounded-full border text-sm font-semibold"
+        aria-hidden="true"
+      >
+        {{ accountInitial }}
+      </span>
+      <div class="min-w-0">
+        <h2 :id="headingId" class="text-xs font-semibold">Signed in</h2>
+        <p class="text-muted mt-1 truncate text-xs" :title="email ?? undefined">
+          {{ accountLabel }}
+        </p>
+      </div>
     </div>
-    <div class="border-line mt-7 space-y-4 border-t pt-6">
+
+    <div class="mt-4 space-y-3">
       <AuthNotice v-if="error" :message="error.message" tone="danger" />
       <button
         type="button"
         :disabled="!hydrated || pending"
-        class="border-line bg-raised text-foreground hover:bg-high focus-visible:outline-focus disabled:text-muted flex h-11 w-full items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed"
+        class="border-line bg-raised text-foreground hover:bg-high focus-visible:outline-focus disabled:text-muted flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border px-3 text-xs font-semibold transition-colors disabled:cursor-not-allowed"
         @click="handleSignOut"
       >
         <span

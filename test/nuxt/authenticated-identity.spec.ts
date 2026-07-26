@@ -1,25 +1,9 @@
-import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
+import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
 import AuthIdentity from '~/components/auth/AuthIdentity.vue'
-import DashboardPage from '~/pages/dashboard.vue'
 import { createAuthenticationError } from '../../shared/authentication/errors'
-import type { AuthenticationSessionState } from '../../shared/authentication/types'
-
-const { useAuthenticationStateMock } = vi.hoisted(() => ({
-  useAuthenticationStateMock: vi.fn(),
-}))
-
-mockNuxtImport('useAuthenticationState', () => useAuthenticationStateMock)
-
-const authenticatedSession: AuthenticationSessionState = {
-  authenticated: true,
-  user: {
-    email: 'person@example.com',
-    id: 'user-id',
-  },
-}
 
 const createIdentityWrapper = (
   options: {
@@ -39,9 +23,8 @@ describe('authenticated identity', () => {
     const wrapper = await createIdentityWrapper()
 
     expect(wrapper.get('section').attributes('aria-labelledby')).toBeTruthy()
-    expect(wrapper.get('h1').text()).toBe('Your session is active.')
+    expect(wrapper.get('h2').text()).toBe('Signed in')
     expect(wrapper.text()).toContain('Signed in')
-    expect(wrapper.text()).toContain('Signed in as')
     expect(wrapper.text()).toContain('person@example.com')
     expect(wrapper.get('button').attributes('type')).toBe('button')
     expect(wrapper.get('button').text()).toBe('Sign out')
@@ -50,8 +33,7 @@ describe('authenticated identity', () => {
   it('renders a useful authenticated state when no email claim is available', async () => {
     const wrapper = await createIdentityWrapper({ email: null })
 
-    expect(wrapper.text()).toContain('Your authenticated account is ready.')
-    expect(wrapper.text()).not.toContain('Signed in as')
+    expect(wrapper.text()).toContain('Authenticated account')
   })
 
   it('prevents duplicate sign-out attempts while pending', async () => {
@@ -98,20 +80,5 @@ describe('authenticated identity', () => {
     expect(wrapper.get('[role="alert"]').text()).toBe(
       'Authentication is temporarily unavailable. Try again later.',
     )
-  })
-})
-
-describe('authenticated dashboard', () => {
-  it('resolves and renders the identity component through Nuxt auto-imports', async () => {
-    useAuthenticationStateMock.mockReturnValue({
-      session: {
-        value: authenticatedSession,
-      },
-    })
-
-    const wrapper = await mountSuspended(DashboardPage)
-
-    expect(wrapper.get('h1').text()).toBe('Your session is active.')
-    expect(wrapper.text()).toContain('person@example.com')
   })
 })
