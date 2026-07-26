@@ -21,6 +21,9 @@ export default defineNuxtConfig({
     typeCheck: true,
   },
   vite: {
+    optimizeDeps: {
+      include: ['@supabase/ssr', 'zod'],
+    },
     plugins: [tailwindcss()],
   },
 })

@@ -12,10 +12,11 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_placeholder
       NUXT_PUBLIC_SUPABASE_URL: https://example.invalid
+      SUPABASE_TELEMETRY_DISABLED: '1'
 
     steps:
       - name: Check out repository
@@ -49,3 +50,43 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start isolated Supabase
+        shell: bash
+        run: |
+          set -o pipefail
+          echo "Starting isolated Supabase services."
+          pnpm exec supabase start >/dev/null 2>&1
+          pnpm exec supabase status -o env 2>/dev/null |
+            awk '
+              /^API_URL="/ {
+                value = $0
+                sub(/^API_URL="/, "", value)
+                sub(/"$/, "", value)
+                print "NUXT_PUBLIC_SUPABASE_URL=" value >> ENVIRON["GITHUB_ENV"]
+                found_url = 1
+              }
+              /^PUBLISHABLE_KEY="/ {
+                value = $0
+                sub(/^PUBLISHABLE_KEY="/, "", value)
+                sub(/"$/, "", value)
+                print "NUXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=" value >> ENVIRON["GITHUB_ENV"]
+                found_key = 1
+              }
+              END {
+                if (!found_url || !found_key) {
+                  exit 1
+                }
+              }
+            '
+          echo "Isolated Supabase services are healthy."
+
+      - name: Test authentication integration
+        run: pnpm test:integration
+
+      - name: Stop isolated Supabase
+        if: ${{ always() }}
+        run: pnpm exec supabase stop --no-backup
