@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { completeAuthenticationSignOut } from '~/utils/authentication/sign-out'
-import type { AuthenticationSignOutResult } from '~~/shared/authentication/types'
+import { dashboardMockData } from '~/data/dashboard'
 
 definePageMeta({
+  layout: 'authenticated',
   middleware: 'authenticated',
 })
 
@@ -10,35 +10,23 @@ useHead({
   title: 'Dashboard · ResumAI',
 })
 
-const authentication = useAuthenticationState()
-const authenticatedUser = computed(() =>
-  authentication.session.value?.authenticated
-    ? authentication.session.value.user
-    : null,
-)
-
-const signOut = () =>
-  completeAuthenticationSignOut({
-    navigateToSignIn: () =>
-      navigateTo('/sign-in', {
-        replace: true,
-      }),
-    requestSignOut: () =>
-      $fetch<AuthenticationSignOutResult>('/api/auth/sign-out', {
-        method: 'POST',
-      }),
-    resolveSession: authentication.resolve,
-  })
+const dashboard = dashboardMockData
 </script>
 
 <template>
-  <main
-    class="bg-canvas text-foreground grid min-h-dvh place-items-center p-6 sm:p-8"
-  >
-    <AuthIdentity
-      v-if="authenticatedUser"
-      :email="authenticatedUser.email"
-      :sign-out="signOut"
-    />
+  <main class="min-h-dvh px-5 py-8 sm:px-8 xl:px-12 xl:py-10">
+    <DashboardHeader :summary="dashboard.summary" />
+
+    <div
+      class="mt-10 grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,1fr)]"
+    >
+      <DashboardReadyForReview :item="dashboard.readyForReview" />
+      <DashboardQuickActions :actions="dashboard.quickActions" />
+      <DashboardRecentApplications
+        :applications="dashboard.recentApplications"
+        :follow-up="dashboard.followUp"
+      />
+      <DashboardBaseResumes :resumes="dashboard.baseResumes" />
+    </div>
   </main>
 </template>
