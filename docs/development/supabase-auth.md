@@ -66,10 +66,10 @@ request-scoped client that reads and writes SSR cookies. Server authorization
 must use `resolveAuthenticatedUser`, which validates signed claims and never
 trusts browser session state or user-editable metadata.
 
-The Supabase CLI is included only for OWL-14's isolated authentication tests.
-The committed `supabase/config.toml` is not linked to the hosted project and
-does not contain hosted credentials or create product tables, migrations, seed
-data, storage resources, or application policies.
+The Supabase CLI supports OWL-14's isolated authentication tests and the
+repository-controlled product migrations introduced by OWL-19. The committed
+`supabase/config.toml` is not linked to the hosted project and does not contain
+hosted credentials, seed data, storage resources, or application policies.
 
 ## OWL-12 implementation notes
 
@@ -141,8 +141,9 @@ Nuxt.
 
 The local Auth configuration enables email/password signup and email
 confirmation so the test exercises the same user-facing confirmation boundary
-as the hosted project. It disables anonymous sign-in and does not introduce
-profiles, product schema, migrations, RLS, storage, or privileged credentials.
+as the hosted project. It disables anonymous sign-in and applies the canonical
+product migrations, but does not introduce profiles, seed data, RLS, storage,
+or privileged credentials.
 
 ### Local prerequisites
 

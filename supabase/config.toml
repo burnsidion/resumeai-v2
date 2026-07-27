@@ -34,7 +34,7 @@ sql_paths = []
 enabled = false
 
 [studio]
-enabled = false
+enabled = true
 port = 54323
 api_url = "http://127.0.0.1"
 

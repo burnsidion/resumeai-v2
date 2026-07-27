@@ -84,6 +84,9 @@ jobs:
             '
           echo "Isolated Supabase services are healthy."
 
+      - name: Test product schema
+        run: pnpm test:database
+
       - name: Test authentication integration
         run: pnpm test:integration
 

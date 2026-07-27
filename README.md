@@ -58,12 +58,14 @@ pnpm lint:fix      # Apply safe ESLint fixes
 pnpm format        # Format supported files
 pnpm format:check  # Check formatting without modifying files
 pnpm test          # Run all tests once
+pnpm test:database # Run product-schema tests against local Supabase
 pnpm test:integration # Run browser authentication tests against local Supabase
 pnpm test:watch    # Run tests in watch mode
 ```
 
-The integration command requires the isolated local Supabase environment and
-its public test configuration. It never uses the hosted project. See
+The database and integration commands require the isolated local Supabase
+environment. They never use the hosted project. See
+[Database development](docs/development/database.md) and
 [Supabase Auth setup](docs/development/supabase-auth.md#isolated-authentication-integration-tests)
 for the complete start, test, and cleanup sequence.
 
@@ -74,8 +76,8 @@ for the complete start, test, and cleanup sequence.
 - `test/unit/` owns fast tests that do not require Nuxt runtime behavior.
 - `test/nuxt/` owns tests requiring the Nuxt runtime.
 - `test/integration/` owns browser journeys against isolated local services.
-- `supabase/` owns the unlinked local service configuration used by those
-  integration tests.
+- `supabase/` owns canonical migrations, database tests, and the unlinked local
+  service configuration.
 - `docs/product/` owns durable product behavior.
 - `docs/architecture/` owns durable architecture decisions.
 - `docs/design/` owns approved visual references and implementation-facing
@@ -92,4 +94,5 @@ intentionally absent from this foundation.
 - [MVP workflow](docs/product/mvp-workflow.md)
 - [Architecture overview](docs/architecture/overview.md)
 - [Dashboard design specification](docs/design/dashboard.md)
+- [Database development](docs/development/database.md)
 - [Supabase Auth setup](docs/development/supabase-auth.md)
