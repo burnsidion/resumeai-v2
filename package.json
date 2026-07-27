@@ -17,6 +17,7 @@
     "postinstall": "nuxt prepare",
     "preview": "nuxt preview",
     "test": "vitest run",
+    "test:database": "supabase test db --local supabase/tests/database",
     "test:integration": "playwright test",
     "test:watch": "vitest",
     "typecheck": "nuxt typecheck"
