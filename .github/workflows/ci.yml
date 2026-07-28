@@ -87,7 +87,14 @@ jobs:
       - name: Test product schema
         run: pnpm test:database
 
-      - name: Test authentication integration
+      - name: Verify generated database types
+        run: |
+          pnpm exec supabase gen types typescript --local --schema public \
+            | pnpm exec prettier --parser typescript \
+            > /tmp/database.generated.ts
+          diff --unified server/infrastructure/supabase/database.generated.ts /tmp/database.generated.ts
+
+      - name: Test authentication and product data integration
         run: pnpm test:integration
 
       - name: Stop isolated Supabase
