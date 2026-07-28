@@ -7,6 +7,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { H3Event } from 'h3'
 
 import type { SupabaseAuthenticationConfiguration } from '~~/shared/authentication/types'
+import type { Database } from '../../infrastructure/supabase/database.generated'
 
 export const authenticationPrivateResponseHeaders = {
   'Cache-Control': 'private, no-cache, no-store, must-revalidate, max-age=0',
@@ -79,11 +80,13 @@ export function hasAuthenticationCookie(
   )
 }
 
+export type ServerSupabaseClient = SupabaseClient<Database>
+
 export type ServerSupabaseClientFactory = (
   supabaseUrl: string,
   supabasePublishableKey: string,
   options: { cookies: CookieMethodsServer },
-) => SupabaseClient
+) => ServerSupabaseClient
 
 export interface CreateAuthenticationServerClientOptions {
   clientFactory?: ServerSupabaseClientFactory
@@ -95,12 +98,12 @@ const defaultServerClientFactory: ServerSupabaseClientFactory = (
   supabaseUrl,
   supabasePublishableKey,
   options,
-) => createServerClient(supabaseUrl, supabasePublishableKey, options)
+) => createServerClient<Database>(supabaseUrl, supabasePublishableKey, options)
 
 export function createAuthenticationServerClient(
   event: H3Event,
   options: CreateAuthenticationServerClientOptions = {},
-): SupabaseClient {
+): ServerSupabaseClient {
   const configuration =
     options.configuration ?? getRuntimeSupabaseConfiguration(event)
   const clientFactory = options.clientFactory ?? defaultServerClientFactory

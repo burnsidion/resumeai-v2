@@ -59,7 +59,7 @@ pnpm format        # Format supported files
 pnpm format:check  # Check formatting without modifying files
 pnpm test          # Run all tests once
 pnpm test:database # Run product-schema tests against local Supabase
-pnpm test:integration # Run browser authentication tests against local Supabase
+pnpm test:integration # Run auth and product-data integration tests locally
 pnpm test:watch    # Run tests in watch mode
 ```
 
@@ -76,6 +76,12 @@ for the complete start, test, and cleanup sequence.
 - `test/unit/` owns fast tests that do not require Nuxt runtime behavior.
 - `test/nuxt/` owns tests requiring the Nuxt runtime.
 - `test/integration/` owns browser journeys against isolated local services.
+- `server/infrastructure/` owns server-only provider types and adapters.
+- `server/repositories/` owns narrow, explicitly owner-scoped persistence
+  reads.
+- `server/services/` owns product use-case coordination without HTTP or UI
+  concerns.
+- `shared/` owns runtime-validated contracts that are safe across boundaries.
 - `supabase/` owns canonical migrations, database tests, and the unlinked local
   service configuration.
 - `docs/product/` owns durable product behavior.
@@ -95,4 +101,5 @@ intentionally absent from this foundation.
 - [Architecture overview](docs/architecture/overview.md)
 - [Dashboard design specification](docs/design/dashboard.md)
 - [Database development](docs/development/database.md)
+- [Product data access](docs/development/product-data.md)
 - [Supabase Auth setup](docs/development/supabase-auth.md)

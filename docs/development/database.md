@@ -7,9 +7,10 @@ ResumAI V2 database. Product schema changes must be introduced through ordered,
 reviewable migrations rather than through hosted Dashboard changes.
 
 OWL-19 establishes the first relational product structures. OWL-20 adds the
-repository-controlled authorization boundary for those tables. Storage
-buckets, repositories, APIs, generated application types, and product feature
-integration remain separate implementation boundaries.
+repository-controlled authorization boundary for those tables. OWL-21 adds
+generated database types and the first read-only product-data repositories and
+service. Storage buckets, write use cases, APIs, and product feature integration
+remain separate implementation boundaries.
 
 ## Local workflow
 
@@ -98,11 +99,20 @@ present. The event trigger continues to operate without exposing its
 
 ## Schema synchronization
 
-No generated TypeScript database types are committed by OWL-19 because no
-application code consumes the product schema yet. The future repository and API
-slice should define the type-generation command and generate types from a clean
-local database built from these migrations.
+The committed server-only database types are generated from a clean local
+database built from the repository migrations:
+
+```sh
+pnpm exec supabase db reset --local --no-seed
+pnpm exec supabase gen types typescript --local --schema public \
+  | pnpm exec prettier --parser typescript \
+  > server/infrastructure/supabase/database.generated.ts
+```
+
+Do not hand-edit the generated file. CI regenerates it from the isolated local
+schema and compares it with the committed version.
 
 RLS policies and grants must be changed through repository migrations and
 verified by `pnpm test:database` before product data is consumed by the
-application.
+application. See [Product data access](product-data.md) for the server-side
+repository and service boundaries.
