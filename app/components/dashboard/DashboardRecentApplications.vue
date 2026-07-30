@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import type {
-  DashboardFollowUp,
-  DashboardRecentApplication,
-} from '~/types/dashboard'
+import type { DashboardRecentApplicationsViewModel } from '~~/shared/dashboard/view-model'
 
 defineProps<{
-  applications: ReadonlyArray<DashboardRecentApplication>
-  followUp?: DashboardFollowUp
+  applications: DashboardRecentApplicationsViewModel
 }>()
 
 const statusClasses = {
   attention: 'border-accent/25 bg-accent/10 text-accent',
+  danger: 'border-danger/25 bg-danger/10 text-danger',
   info: 'border-line bg-high text-foreground',
   neutral: 'border-line bg-panel text-muted',
+  success: 'border-success/25 bg-success/10 text-success',
 } as const
 </script>
 
@@ -34,9 +32,9 @@ const statusClasses = {
       </span>
     </div>
 
-    <ul class="mt-5 space-y-2">
+    <ul v-if="applications.items.length > 0" class="mt-5 space-y-2">
       <li
-        v-for="application in applications"
+        v-for="application in applications.items"
         :key="application.id"
         class="border-line bg-panel/35 grid min-h-[4.25rem] grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto_auto] sm:px-4"
       >
@@ -58,22 +56,19 @@ const statusClasses = {
           class="hidden min-h-7 items-center rounded-lg border px-3 text-xs font-medium sm:inline-flex"
           :class="statusClasses[application.statusTone]"
         >
-          {{ application.status }}
+          {{ application.statusLabel }}
         </span>
         <time class="text-muted text-xs" :datetime="application.dateTime">
-          {{ application.date }}
+          {{ application.dateLabel }}
         </time>
       </li>
     </ul>
 
-    <div
-      v-if="followUp"
-      class="border-line text-muted mt-3 flex min-h-11 items-center gap-2 rounded-xl border px-4 text-xs"
+    <p
+      v-else
+      class="border-line text-muted mt-5 rounded-xl border border-dashed px-4 py-6 text-sm leading-6"
     >
-      <span class="bg-danger size-2 shrink-0 rounded-full" aria-hidden="true" />
-      <span class="font-medium">{{ followUp.label }}</span>
-      <span aria-hidden="true">·</span>
-      <span class="truncate">{{ followUp.context }}</span>
-    </div>
+      {{ applications.emptyMessage }}
+    </p>
   </section>
 </template>

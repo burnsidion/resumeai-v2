@@ -1,25 +1,9 @@
 <script setup lang="ts">
-import type { DashboardSummary } from '~/types/dashboard'
+import type { DashboardSummaryViewModel } from '~~/shared/dashboard/view-model'
 
-const props = defineProps<{
-  summary: DashboardSummary
+defineProps<{
+  summary: DashboardSummaryViewModel
 }>()
-
-const activeApplicationsLabel = computed(
-  () =>
-    `${props.summary.activeApplicationCount} active ${
-      props.summary.activeApplicationCount === 1
-        ? 'application'
-        : 'applications'
-    }`,
-)
-
-const interviewsLabel = computed(
-  () =>
-    `${props.summary.interviewCount} ${
-      props.summary.interviewCount === 1 ? 'interview' : 'interviews'
-    }`,
-)
 </script>
 
 <template>
@@ -33,7 +17,7 @@ const interviewsLabel = computed(
       <h1
         class="mt-2 text-3xl leading-tight font-semibold tracking-[-0.04em] sm:text-[2.5rem]"
       >
-        Welcome back, {{ summary.firstName }}.
+        {{ summary.heading }}
       </h1>
       <p class="text-muted mt-2 text-base leading-7">
         {{ summary.message }}
@@ -44,13 +28,13 @@ const interviewsLabel = computed(
           class="border-line bg-panel text-muted inline-flex min-h-8 items-center gap-2 rounded-full border px-3 text-xs font-medium"
         >
           <span class="bg-accent size-1.5 rounded-full" aria-hidden="true" />
-          {{ activeApplicationsLabel }}
+          {{ summary.activeApplicationsLabel }}
         </span>
         <span
           class="border-line bg-panel text-muted inline-flex min-h-8 items-center gap-2 rounded-full border px-3 text-xs font-medium"
         >
           <span class="bg-accent size-1.5 rounded-full" aria-hidden="true" />
-          {{ interviewsLabel }}
+          {{ summary.interviewsLabel }}
         </span>
       </div>
     </div>
