@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DashboardQuickAction } from '~/types/dashboard'
+import type { DashboardQuickActionViewModel } from '~~/shared/dashboard/view-model'
 
 defineProps<{
-  actions: ReadonlyArray<DashboardQuickAction>
+  actions: ReadonlyArray<DashboardQuickActionViewModel>
 }>()
 </script>
 

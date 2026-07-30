@@ -1,24 +1,9 @@
 <script setup lang="ts">
-import type { DashboardBaseResumes } from '~/types/dashboard'
+import type { DashboardBaseResumesViewModel } from '~~/shared/dashboard/view-model'
 
-const props = defineProps<{
-  resumes: DashboardBaseResumes
+defineProps<{
+  resumes: DashboardBaseResumesViewModel
 }>()
-
-const resumeCountLabel = computed(
-  () => `${props.resumes.activeCount} of ${props.resumes.activeLimit} resumes`,
-)
-
-const availableSlots = computed(
-  () => props.resumes.activeLimit - props.resumes.activeCount,
-)
-
-const availableSlotsLabel = computed(
-  () =>
-    `${availableSlots.value} resume ${
-      availableSlots.value === 1 ? 'slot' : 'slots'
-    } available`,
-)
 </script>
 
 <template>
@@ -33,8 +18,15 @@ const availableSlotsLabel = computed(
       >
         Base resumes
       </h2>
-      <span class="text-muted text-xs">{{ resumeCountLabel }}</span>
+      <span class="text-muted text-xs">{{ resumes.countLabel }}</span>
     </div>
+
+    <p
+      v-if="resumes.emptyMessage"
+      class="border-line text-muted mt-5 rounded-xl border border-dashed px-4 py-6 text-sm leading-6"
+    >
+      {{ resumes.emptyMessage }}
+    </p>
 
     <ul class="mt-5 space-y-2">
       <li
@@ -64,20 +56,19 @@ const availableSlotsLabel = computed(
             {{ resume.filename }}
           </span>
           <span class="text-muted mt-0.5 block text-xs">
-            {{ resume.updatedAt }}
+            {{ resume.addedLabel }}
           </span>
         </span>
         <span
-          class="inline-flex items-center gap-2 text-xs font-medium"
-          :class="resume.status === 'primary' ? 'text-accent' : 'text-success'"
+          class="text-success inline-flex items-center gap-2 text-xs font-medium"
         >
           <span class="size-2 rounded-full bg-current" aria-hidden="true" />
-          {{ resume.status === 'primary' ? 'Primary' : 'Active' }}
+          {{ resume.statusLabel }}
         </span>
       </li>
 
       <li
-        v-if="availableSlots > 0"
+        v-if="resumes.remainingSlots > 0"
         class="border-line text-muted flex min-h-[4.25rem] items-center gap-3 rounded-xl border border-dashed px-3 sm:px-4"
       >
         <span
@@ -86,7 +77,7 @@ const availableSlotsLabel = computed(
         >
           +
         </span>
-        <span class="text-sm">{{ availableSlotsLabel }}</span>
+        <span class="text-sm">{{ resumes.remainingSlotsLabel }}</span>
       </li>
     </ul>
   </section>
