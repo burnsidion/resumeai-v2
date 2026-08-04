@@ -171,7 +171,7 @@ const createProductFixture = async (
       original_filename: `${label} Resume.pdf`,
       id: baseResumeId,
       size_bytes: 1024,
-      storage_object_key: `${authenticatedUser.user.id}/base-resumes/${baseResumeId}.pdf`,
+      storage_object_key: `${authenticatedUser.user.id}/${baseResumeId}.pdf`,
       user_id: authenticatedUser.user.id,
     })
 

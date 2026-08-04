@@ -66,10 +66,12 @@ request-scoped client that reads and writes SSR cookies. Server authorization
 must use `resolveAuthenticatedUser`, which validates signed claims and never
 trusts browser session state or user-editable metadata.
 
-The Supabase CLI supports OWL-14's isolated authentication tests and the
-repository-controlled product migrations introduced by OWL-19. The committed
-`supabase/config.toml` is not linked to the hosted project and does not contain
-hosted credentials, seed data, storage resources, or application policies.
+The Supabase CLI supports OWL-14's isolated authentication tests, the
+repository-controlled product migrations introduced by OWL-19, and the private
+Storage configuration introduced by OWL-25. The committed
+`supabase/config.toml` contains no hosted credentials or project link. It does
+declare the isolated Auth settings and Storage buckets needed to reproduce the
+local environment. Database and Storage policies remain in migrations.
 
 ## OWL-12 implementation notes
 
@@ -141,9 +143,9 @@ Nuxt.
 
 The local Auth configuration enables email/password signup and email
 confirmation so the test exercises the same user-facing confirmation boundary
-as the hosted project. It disables anonymous sign-in and applies the canonical
-product migrations, but does not introduce profiles, seed data, RLS, storage,
-or privileged credentials.
+as the hosted project. It disables anonymous sign-in, applies the canonical
+product migrations, and provisions the repository-declared private Storage
+bucket. It does not introduce profiles, seed data, or privileged credentials.
 
 ### Local prerequisites
 
@@ -196,6 +198,10 @@ The automated browser journey verifies:
 8. Current-session signout.
 9. An unauthenticated session afterward.
 10. Redirect away from the protected dashboard.
+
+The same isolated suite also verifies private base-resume Storage ownership,
+upload restrictions, immutable object behavior, and cleanup-only deletion. See
+[Base resume storage](base-resume-storage.md) for that boundary.
 
 The test reads only the matching disposable email from Mailpit. Confirmation
 links are validated as loopback-only before navigation. Playwright traces,

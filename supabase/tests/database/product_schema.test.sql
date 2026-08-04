@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(18);
+select plan(19);
 
 select has_table('public', 'base_resumes', 'base_resumes exists');
 select has_table(
@@ -87,6 +87,17 @@ select ok(
       and indexdef ilike '%where (active_slot is not null)%'
   ),
   'base resumes enforce one active row per user and slot'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'base_resumes_storage_object_key_check'
+      and conrelid = 'public.base_resumes'::regclass
+      and pg_get_constraintdef(oid) like '%user_id%id%pdf%'
+  ),
+  'base resumes enforce the deterministic owner and resume object key'
 );
 
 select ok(

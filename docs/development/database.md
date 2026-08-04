@@ -9,8 +9,9 @@ reviewable migrations rather than through hosted Dashboard changes.
 OWL-19 establishes the first relational product structures. OWL-20 adds the
 repository-controlled authorization boundary for those tables. OWL-21 adds
 generated database types and the first read-only product-data repositories and
-service. Storage buckets, write use cases, APIs, and product feature integration
-remain separate implementation boundaries.
+service. OWL-25 adds the private base-resume bucket, deterministic object-key
+constraint, and Storage ownership policies. Write use cases, APIs, and product
+feature integration remain separate implementation boundaries.
 
 ## Local workflow
 
@@ -46,6 +47,10 @@ The database tests create disposable Auth and product rows inside transactions
 that are rolled back. Authorization tests switch between two authenticated JWT
 subjects and the anonymous role to exercise real PostgreSQL grants and RLS
 behavior. No seed fixture or persistent test user is required.
+
+The local stack also provisions repository-declared Storage buckets. Real
+Storage API behavior is covered by the disposable Playwright integration suite;
+see [Base resume storage](base-resume-storage.md).
 
 ## Product authorization model
 
@@ -96,6 +101,19 @@ repository migration revokes direct function execution from `anon`,
 `authenticated`, and `service_role` when that hosted-only trigger function is
 present. The event trigger continues to operate without exposing its
 `SECURITY DEFINER` function as an RPC.
+
+## Base-resume object authorization
+
+The private `base-resumes` bucket and its RLS policies are a separate boundary
+from the `base_resumes` table policies. Storage access requires the
+authenticated user to own the object and use the exact
+`{userId}/{baseResumeId}.pdf` key. There is no update or overwrite path.
+
+An owner may delete an uploaded object only before a matching product row
+exists. This narrowly supports compensating cleanup if persistence fails. Once
+tracked, both active and retired source PDFs remain immutable and undeletable.
+Bucket configuration, hosted synchronization, and behavioral test details live
+in [Base resume storage](base-resume-storage.md).
 
 ## Schema synchronization
 

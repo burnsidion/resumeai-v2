@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(13);
 
 insert into auth.users (id, email)
 values
@@ -24,7 +24,7 @@ values
     '10000000-0000-4000-8000-000000000001',
     '00000000-0000-4000-8000-000000000001',
     'resume-one.pdf',
-    '00000000-0000-4000-8000-000000000001/base-resumes/one.pdf',
+    '00000000-0000-4000-8000-000000000001/10000000-0000-4000-8000-000000000001.pdf',
     100,
     repeat('a', 64),
     1
@@ -33,7 +33,7 @@ values
     '10000000-0000-4000-8000-000000000002',
     '00000000-0000-4000-8000-000000000001',
     'resume-two.pdf',
-    '00000000-0000-4000-8000-000000000001/base-resumes/two.pdf',
+    '00000000-0000-4000-8000-000000000001/10000000-0000-4000-8000-000000000002.pdf',
     200,
     repeat('b', 64),
     2
@@ -42,7 +42,7 @@ values
     '10000000-0000-4000-8000-000000000003',
     '00000000-0000-4000-8000-000000000001',
     'resume-three.pdf',
-    '00000000-0000-4000-8000-000000000001/base-resumes/three.pdf',
+    '00000000-0000-4000-8000-000000000001/10000000-0000-4000-8000-000000000003.pdf',
     300,
     repeat('c', 64),
     3
@@ -51,7 +51,7 @@ values
     '10000000-0000-4000-8000-000000000004',
     '00000000-0000-4000-8000-000000000002',
     'other-owner.pdf',
-    '00000000-0000-4000-8000-000000000002/base-resumes/one.pdf',
+    '00000000-0000-4000-8000-000000000002/10000000-0000-4000-8000-000000000004.pdf',
     400,
     repeat('e', 64),
     1
@@ -72,7 +72,7 @@ select throws_ok(
       '10000000-0000-4000-8000-000000000005',
       '00000000-0000-4000-8000-000000000001',
       'too-many.pdf',
-      '00000000-0000-4000-8000-000000000001/base-resumes/too-many.pdf',
+      '00000000-0000-4000-8000-000000000001/10000000-0000-4000-8000-000000000005.pdf',
       500,
       repeat('d', 64),
       1
@@ -103,7 +103,7 @@ select lives_ok(
       '10000000-0000-4000-8000-000000000006',
       '00000000-0000-4000-8000-000000000001',
       'replacement.pdf',
-      '00000000-0000-4000-8000-000000000001/base-resumes/replacement.pdf',
+      '00000000-0000-4000-8000-000000000001/10000000-0000-4000-8000-000000000006.pdf',
       600,
       repeat('d', 64),
       1
@@ -136,6 +136,32 @@ select throws_ok(
   '23514',
   null,
   'a base resume stores a private object key rather than a public URL'
+);
+
+select throws_ok(
+  $$
+    insert into public.base_resumes (
+      id,
+      user_id,
+      original_filename,
+      storage_object_key,
+      size_bytes,
+      content_sha256,
+      active_slot
+    )
+    values (
+      '10000000-0000-4000-8000-000000000008',
+      '00000000-0000-4000-8000-000000000002',
+      'mismatched-object-key.pdf',
+      '00000000-0000-4000-8000-000000000002/10000000-0000-4000-8000-000000000009.pdf',
+      800,
+      repeat('d', 64),
+      2
+    )
+  $$,
+  '23514',
+  null,
+  'a base resume object key must contain its exact owner and resume identity'
 );
 
 select throws_ok(

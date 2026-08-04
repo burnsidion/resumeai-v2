@@ -37,9 +37,11 @@ OWL-27 will own:
 - the three-active-resume experience;
 - persisted resume cards, data refresh, and browser-level workflow tests.
 
-The input `accept` attribute is a browser hint, not a security boundary. File
-type, size, ownership, and active-resume limits must be enforced by the server
-work that OWL-27 consumes.
+The input `accept` attribute is a browser hint, not a security boundary. OWL-25
+adds private owner-scoped Storage plus bucket-level content-type and size
+restrictions. The later server workflow must still inspect the PDF bytes,
+enforce product limits, and coordinate object storage with persistence. See
+[Base resume storage](base-resume-storage.md).
 
 ## Dependency decision
 
