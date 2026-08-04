@@ -59,7 +59,7 @@ pnpm format        # Format supported files
 pnpm format:check  # Check formatting without modifying files
 pnpm test          # Run all tests once
 pnpm test:database # Run product-schema tests against local Supabase
-pnpm test:integration # Run auth and product-data integration tests locally
+pnpm test:integration # Run auth, Storage, and product-data integration tests locally
 pnpm test:watch    # Run tests in watch mode
 ```
 
@@ -82,8 +82,9 @@ for the complete start, test, and cleanup sequence.
 - `server/services/` owns product use-case coordination without HTTP or UI
   concerns.
 - `shared/` owns runtime-validated contracts that are safe across boundaries.
-- `supabase/` owns canonical migrations, database tests, and the unlinked local
-  service configuration.
+- `supabase/` owns canonical migrations, database tests, and reproducible local
+  service and Storage-bucket configuration. Hosted project links remain local
+  and uncommitted.
 - `docs/product/` owns durable product behavior.
 - `docs/architecture/` owns durable architecture decisions.
 - `docs/design/` owns approved visual references and implementation-facing
@@ -101,5 +102,7 @@ intentionally absent from this foundation.
 - [Architecture overview](docs/architecture/overview.md)
 - [Dashboard design specification](docs/design/dashboard.md)
 - [Database development](docs/development/database.md)
+- [Base resume storage](docs/development/base-resume-storage.md)
 - [Product data access](docs/development/product-data.md)
 - [Supabase Auth setup](docs/development/supabase-auth.md)
+- [Upload UI foundation](docs/development/upload-ui.md)
