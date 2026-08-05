@@ -94,7 +94,7 @@ jobs:
             > /tmp/database.generated.ts
           diff --unified server/infrastructure/supabase/database.generated.ts /tmp/database.generated.ts
 
-      - name: Test authentication and product data integration
+      - name: Test authentication, product data, and base resumes
         run: pnpm test:integration
 
       - name: Stop isolated Supabase

@@ -10,8 +10,10 @@ OWL-19 establishes the first relational product structures. OWL-20 adds the
 repository-controlled authorization boundary for those tables. OWL-21 adds
 generated database types and the first read-only product-data repositories and
 service. OWL-25 adds the private base-resume bucket, deterministic object-key
-constraint, and Storage ownership policies. Write use cases, APIs, and product
-feature integration remain separate implementation boundaries.
+constraint, and Storage ownership policies. OWL-26 adds the first authenticated
+write use case that coordinates an immutable object with its exact
+`base_resumes` row. Other write use cases and product-feature integration remain
+separate implementation boundaries.
 
 ## Local workflow
 
