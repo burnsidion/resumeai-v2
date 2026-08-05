@@ -59,7 +59,7 @@ pnpm format        # Format supported files
 pnpm format:check  # Check formatting without modifying files
 pnpm test          # Run all tests once
 pnpm test:database # Run product-schema tests against local Supabase
-pnpm test:integration # Run auth, Storage, and product-data integration tests locally
+pnpm test:integration # Run auth, uploads, Storage, and product-data integration tests locally
 pnpm test:watch    # Run tests in watch mode
 ```
 

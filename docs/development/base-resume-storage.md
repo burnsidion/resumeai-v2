@@ -5,13 +5,13 @@
 Supabase Storage holds immutable base-resume PDFs in the private
 `base-resumes` bucket. Repository configuration owns the bucket definition, and
 the OWL-25 migration owns the database object-key constraint and Storage RLS
-policies.
+policies. OWL-26 owns the trusted Nuxt upload workflow that coordinates this
+bucket with the matching `base_resumes` row.
 
-The browser must not upload directly to Storage as an alternative to the Nuxt
-server workflow. A later upload use case will authenticate the request, perform
-deterministic file validation, coordinate Storage with the `base_resumes` row,
-and translate provider failures into safe application errors. OWL-25 establishes
-and verifies the provider security boundary only.
+The browser must send uploads through the Nuxt server rather than uploading
+directly to Storage. The server authenticates the request, performs deterministic
+file validation, coordinates Storage with the `base_resumes` row, and translates
+provider failures into safe application errors.
 
 No service-role or secret key is used. Storage requests execute with the
 authenticated user's JWT so the same ownership policies apply locally and in
@@ -31,10 +31,10 @@ use an authenticated request or a deliberately short-lived signed URL without
 persisting that URL as product data.
 
 The content-type restriction validates upload metadata; it does not prove that
-the bytes are a valid PDF. The future server upload use case must also reject an
-empty file, validate the PDF signature and supported structure, enforce the
-same size boundary before provider work, and calculate the persisted content
-hash.
+the bytes are a valid PDF. The server upload use case also rejects an empty file,
+requires the `%PDF-` signature, enforces the same size boundary before provider
+work, and calculates the persisted content hash. Full document parsing and
+structural interpretation remain separate future responsibilities.
 
 ## Object identity
 
@@ -54,6 +54,51 @@ uploads must use `upsert: false`. Replacing an active base resume creates a new
 row and object identity; retiring the old row does not make its source PDF
 mutable or deletable.
 
+## Upload use-case boundary
+
+The authenticated endpoint is `POST /api/base-resumes`. It accepts one
+`multipart/form-data` part named `file`; additional parts are rejected. The
+transport reads at most 10 MiB plus a narrow multipart allowance, including when
+the client does not send a trustworthy `Content-Length` header.
+
+The dependency direction is:
+
+```text
+authenticated POST route
+  -> base-resume upload service
+  -> upload repository + Storage adapter
+  -> Supabase Data API + private Storage
+```
+
+Each layer has one owner:
+
+- the route owns trusted session resolution, bounded multipart parsing, HTTP
+  status codes, and safe transport responses;
+- the domain owns filename, exact content type, size, non-empty content, PDF
+  signature, deterministic slot, object-key, and SHA-256 rules;
+- the service owns the upload sequence, concurrent slot reconciliation, and
+  compensating cleanup;
+- the repository owns explicitly user-scoped `base_resumes` persistence;
+- the Storage adapter owns immutable object operations in the `base-resumes`
+  bucket.
+
+The route creates one request-scoped authenticated Supabase client and passes
+that same client through trusted identity resolution, persistence, and Storage.
+It does not use a service-role key. The success response contains only the new
+resume ID, normalized original filename, active slot, and creation timestamp.
+Provider responses, hashes, object keys, and ownership identifiers remain on
+the server.
+
+Expected client-facing failures are stable application codes:
+
+- `authentication-required` and `authentication-unavailable` for the trusted
+  identity boundary;
+- `invalid-upload`, `invalid-filename`, `unsupported-file-type`, `invalid-pdf`,
+  and `file-too-large` for transport or deterministic validation;
+- `active-resume-limit-reached` when all three active slots are occupied;
+- `base-resume-upload-unavailable` for sanitized persistence, Storage, or
+  consistency failures.
+
 ## Access and cleanup rules
 
 The three repository-controlled policies on `storage.objects` allow an
@@ -63,13 +108,18 @@ authenticated user to:
 - read only an object they own in that namespace;
 - delete only an object they own that has no matching `base_resumes` row.
 
-The DELETE policy exists solely for compensating cleanup. The intended future
-write sequence is:
+The DELETE policy exists solely for compensating cleanup. The implemented write
+sequence is:
 
 1. Generate the base-resume ID and deterministic object key.
 2. Validate and upload the new object without upsert.
 3. Insert the matching `base_resumes` row.
 4. If the insert fails, remove the still-untracked object.
+
+Concurrent uploads may select the same available slot. The database uniqueness
+constraint decides the winner. A losing request refreshes occupied slots and
+either retries with the next deterministic slot or removes its untracked object
+when the three-resume limit has been reached.
 
 Once the database row exists, the PDF is durable. Active, retired, and
 historically referenced base-resume objects cannot be deleted through the
@@ -91,7 +141,8 @@ pnpm exec supabase start
 pnpm exec supabase db reset --local --no-seed
 ```
 
-Run the catalog, authorization, and real Storage API tests:
+Run the catalog, authorization, real Storage API, and trusted upload-route
+tests:
 
 ```sh
 pnpm test:database
@@ -108,7 +159,9 @@ pnpm exec supabase stop --no-backup
 ```
 
 The integration configuration rejects non-loopback Supabase URLs. Never run the
-disposable Storage tests against the hosted project.
+disposable Storage or upload tests against the hosted project. The upload suite
+verifies exact row/object persistence, validation no-ops, object immutability,
+deterministic slots, and cleanup under concurrent capacity pressure.
 
 ## Hosted synchronization
 
@@ -135,5 +188,6 @@ Verify hosted parity without uploading real documents or creating test users:
 - `base_resumes.storage_object_key` enforces the deterministic key and remains
   unique.
 
-Hosted object operations will be exercised through the real application flow
-in a later upload ticket, not by retaining disposable production data.
+The hosted project is not used for disposable integration tests. OWL-27 may
+consume the authenticated endpoint from the upload interface without bypassing
+this server boundary or retaining test data in the hosted project.
