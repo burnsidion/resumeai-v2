@@ -85,7 +85,8 @@ const createAttentionViewModel = (
   if (productData.baseResumes.activeCount === 0) {
     return {
       action: {
-        availability: 'unavailable',
+        availability: 'available',
+        id: 'upload-base-resume',
         label: 'Upload base resume',
       },
       description:
@@ -100,6 +101,7 @@ const createAttentionViewModel = (
     return {
       action: {
         availability: 'unavailable',
+        id: 'create-application',
         label: 'Create application',
       },
       description:
@@ -146,8 +148,15 @@ const createQuickActions = (
     label: 'Create application',
   },
   {
-    availability: 'unavailable',
-    description: `${productData.baseResumes.activeCount} of ${productData.baseResumes.activeLimit} resumes`,
+    availability:
+      productData.baseResumes.activeCount < productData.baseResumes.activeLimit
+        ? 'available'
+        : 'unavailable',
+    description:
+      productData.baseResumes.activeCount ===
+      productData.baseResumes.activeLimit
+        ? 'All three resume slots are in use'
+        : `${productData.baseResumes.activeCount} of ${productData.baseResumes.activeLimit} resumes`,
     icon: 'upload',
     id: 'upload-base-resume',
     label: 'Upload base resume',
@@ -181,6 +190,7 @@ export function createDashboardViewModel(
           ? 'No base resumes have been added yet.'
           : null,
       items: productData.baseResumes.items.map((resume) => ({
+        activeSlot: resume.activeSlot,
         addedLabel: `Added ${formatDate(resume.createdAt)}`,
         createdAt: resume.createdAt,
         filename: resume.originalFilename,

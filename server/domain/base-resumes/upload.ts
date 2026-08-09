@@ -2,12 +2,13 @@ import {
   baseResumeOriginalFilenameSchema,
   type ActiveBaseResumeSlot,
 } from '../../../shared/base-resumes/upload'
-
-export const BASE_RESUME_CONTENT_TYPE = 'application/pdf'
-export const MAXIMUM_BASE_RESUME_SIZE_BYTES = 10 * 1024 * 1024
+import {
+  BASE_RESUME_CONTENT_TYPE,
+  BASE_RESUME_PDF_SIGNATURE_BYTES,
+  MAXIMUM_BASE_RESUME_SIZE_BYTES,
+} from '../../../shared/base-resumes/constraints'
 
 const activeBaseResumeSlots = [1, 2, 3] as const
-const pdfSignature = new Uint8Array([0x25, 0x50, 0x44, 0x46, 0x2d])
 
 export type BaseResumeUploadDomainErrorCode =
   | 'empty-file'
@@ -36,7 +37,7 @@ export class BaseResumeUploadDomainError extends Error {
 }
 
 const hasPdfSignature = (bytes: Uint8Array): boolean =>
-  pdfSignature.every((byte, index) => bytes[index] === byte)
+  BASE_RESUME_PDF_SIGNATURE_BYTES.every((byte, index) => bytes[index] === byte)
 
 const validateOriginalFilename = (originalFilename: string): string => {
   const normalizedFilename = originalFilename.trim()

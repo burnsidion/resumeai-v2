@@ -1,11 +1,31 @@
 import { z } from 'zod'
 
+import { activeBaseResumeSlotSchema } from '../base-resumes/upload'
+
 const countSchema = z.number().int().nonnegative()
 const timestampSchema = z.iso.datetime({ offset: true })
 
 export const dashboardUnavailableActionSchema = z
   .object({
     availability: z.literal('unavailable'),
+    label: z.string().trim().min(1),
+  })
+  .strict()
+
+export const dashboardActionAvailabilitySchema = z.enum([
+  'available',
+  'unavailable',
+])
+
+export const dashboardGuidanceActionIdSchema = z.enum([
+  'create-application',
+  'upload-base-resume',
+])
+
+export const dashboardGuidanceActionSchema = z
+  .object({
+    availability: dashboardActionAvailabilitySchema,
+    id: dashboardGuidanceActionIdSchema,
     label: z.string().trim().min(1),
   })
   .strict()
@@ -38,7 +58,7 @@ const dashboardReviewAttentionSchema = z
 
 const dashboardGuidanceAttentionSchema = z
   .object({
-    action: dashboardUnavailableActionSchema.nullable(),
+    action: dashboardGuidanceActionSchema.nullable(),
     description: z.string().trim().min(1),
     eyebrow: z.string().trim().min(1),
     kind: z.literal('guidance'),
@@ -57,12 +77,18 @@ export const dashboardQuickActionIconSchema = z.enum([
   'upload',
 ])
 
+export const dashboardQuickActionIdSchema = z.enum([
+  'create-application',
+  'upload-base-resume',
+  'view-applications',
+])
+
 export const dashboardQuickActionViewModelSchema = z
   .object({
-    availability: z.literal('unavailable'),
+    availability: dashboardActionAvailabilitySchema,
     description: z.string().trim().min(1),
     icon: dashboardQuickActionIconSchema,
-    id: z.string().trim().min(1),
+    id: dashboardQuickActionIdSchema,
     label: z.string().trim().min(1),
   })
   .strict()
@@ -106,6 +132,7 @@ export const dashboardRecentApplicationsViewModelSchema = z
 
 export const dashboardBaseResumeViewModelSchema = z
   .object({
+    activeSlot: activeBaseResumeSlotSchema,
     addedLabel: z.string().trim().min(1),
     createdAt: timestampSchema,
     filename: z.string().trim().min(1),
@@ -202,6 +229,9 @@ export type DashboardBaseResumesViewModel = z.infer<
 >
 export type DashboardQuickActionViewModel = z.infer<
   typeof dashboardQuickActionViewModelSchema
+>
+export type DashboardQuickActionId = z.infer<
+  typeof dashboardQuickActionIdSchema
 >
 export type DashboardRecentApplicationViewModel = z.infer<
   typeof dashboardRecentApplicationViewModelSchema

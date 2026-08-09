@@ -4,6 +4,10 @@ import type { DashboardBaseResumesViewModel } from '~~/shared/dashboard/view-mod
 defineProps<{
   resumes: DashboardBaseResumesViewModel
 }>()
+
+const emit = defineEmits<{
+  'upload-requested': []
+}>()
 </script>
 
 <template>
@@ -59,25 +63,41 @@ defineProps<{
             {{ resume.addedLabel }}
           </span>
         </span>
-        <span
-          class="text-success inline-flex items-center gap-2 text-xs font-medium"
-        >
-          <span class="size-2 rounded-full bg-current" aria-hidden="true" />
-          {{ resume.statusLabel }}
+        <span class="text-right text-xs">
+          <span class="text-success inline-flex items-center gap-2 font-medium">
+            <span class="size-2 rounded-full bg-current" aria-hidden="true" />
+            {{ resume.statusLabel }}
+          </span>
+          <span class="text-muted mt-1 block"
+            >Slot {{ resume.activeSlot }}</span
+          >
         </span>
       </li>
 
       <li
         v-if="resumes.remainingSlots > 0"
-        class="border-line text-muted flex min-h-[4.25rem] items-center gap-3 rounded-xl border border-dashed px-3 sm:px-4"
+        class="border-line rounded-xl border border-dashed"
       >
-        <span
-          class="border-line grid size-10 place-items-center rounded-lg border text-xl"
-          aria-hidden="true"
+        <button
+          type="button"
+          class="text-muted hover:text-foreground flex min-h-[4.25rem] w-full items-center gap-3 rounded-xl px-3 text-left transition-colors hover:bg-cyan-300/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 sm:px-4"
+          @click="emit('upload-requested')"
         >
-          +
-        </span>
-        <span class="text-sm">{{ resumes.remainingSlotsLabel }}</span>
+          <span
+            class="border-line grid size-10 place-items-center rounded-lg border text-xl"
+            aria-hidden="true"
+          >
+            +
+          </span>
+          <span class="min-w-0">
+            <span class="text-foreground block text-sm font-medium">
+              Upload base resume
+            </span>
+            <span class="mt-0.5 block text-xs">
+              {{ resumes.remainingSlotsLabel }}
+            </span>
+          </span>
+        </button>
       </li>
     </ul>
   </section>

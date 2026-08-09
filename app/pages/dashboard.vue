@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import BaseResumeUploadDialog from '~/components/base-resumes/BaseResumeUploadDialog.vue'
+
 definePageMeta({
   layout: 'authenticated',
   middleware: 'authenticated',
@@ -8,7 +10,38 @@ useHead({
   title: 'Dashboard · ResumAI',
 })
 
-const { data: dashboard, status } = useDashboard()
+const { data: dashboard, refresh, status } = useDashboard()
+const uploadDialogOpen = ref(false)
+
+const openBaseResumeUpload = (): void => {
+  if ((dashboard.value?.baseResumes.remainingSlots ?? 0) > 0) {
+    uploadDialogOpen.value = true
+  }
+}
+
+const closeBaseResumeUpload = (): void => {
+  uploadDialogOpen.value = false
+}
+
+const handleBaseResumeUploaded = async (): Promise<void> => {
+  await refresh()
+}
+
+const handleUploadRecovery = async (
+  recovery: 'refresh' | 'sign-in',
+): Promise<void> => {
+  if (recovery === 'sign-in') {
+    closeBaseResumeUpload()
+    await navigateTo('/sign-in')
+    return
+  }
+
+  try {
+    await refresh()
+  } finally {
+    closeBaseResumeUpload()
+  }
+}
 </script>
 
 <template>
@@ -19,13 +52,31 @@ const { data: dashboard, status } = useDashboard()
       <div
         class="mt-10 grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,1fr)]"
       >
-        <DashboardReadyForReview :item="dashboard.attention" />
-        <DashboardQuickActions :actions="dashboard.quickActions" />
+        <DashboardReadyForReview
+          :item="dashboard.attention"
+          @upload-requested="openBaseResumeUpload"
+        />
+        <DashboardQuickActions
+          :actions="dashboard.quickActions"
+          @upload-requested="openBaseResumeUpload"
+        />
         <DashboardRecentApplications
           :applications="dashboard.recentApplications"
         />
-        <DashboardBaseResumes :resumes="dashboard.baseResumes" />
+        <DashboardBaseResumes
+          :resumes="dashboard.baseResumes"
+          @upload-requested="openBaseResumeUpload"
+        />
       </div>
+
+      <BaseResumeUploadDialog
+        :active-count="dashboard.baseResumes.activeCount"
+        :active-limit="dashboard.baseResumes.activeLimit"
+        :open="uploadDialogOpen"
+        @close="closeBaseResumeUpload"
+        @recovery-requested="handleUploadRecovery"
+        @uploaded="handleBaseResumeUploaded"
+      />
     </template>
 
     <section

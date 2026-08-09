@@ -2,8 +2,8 @@ import type {
   ActiveBaseResumeSlot,
   UploadedBaseResume,
 } from '../../shared/base-resumes/upload'
+import { BASE_RESUME_CONTENT_TYPE } from '../../shared/base-resumes/constraints'
 import {
-  BASE_RESUME_CONTENT_TYPE,
   BaseResumeUploadDomainError,
   calculateBaseResumeSha256,
   createBaseResumeObjectKey,

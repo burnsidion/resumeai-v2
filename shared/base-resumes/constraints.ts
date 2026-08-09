@@ -1,0 +1,8 @@
+export const BASE_RESUME_CONTENT_TYPE = 'application/pdf'
+export const MAXIMUM_BASE_RESUME_SIZE_MEBIBYTES = 10
+export const MAXIMUM_BASE_RESUME_SIZE_BYTES =
+  MAXIMUM_BASE_RESUME_SIZE_MEBIBYTES * 1024 * 1024
+
+export const BASE_RESUME_PDF_SIGNATURE_BYTES = [
+  0x25, 0x50, 0x44, 0x46, 0x2d,
+] as const

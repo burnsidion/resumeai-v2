@@ -7,6 +7,7 @@ import {
   expect,
   type APIResponse,
   type BrowserContext,
+  type Locator,
   type Page,
   test,
 } from '@playwright/test'
@@ -238,6 +239,56 @@ const expectUploadFailure = async (
   })
 }
 
+const getDashboardSection = (page: Page, name: string): Locator =>
+  page.getByRole('region', { name })
+
+const openUploadDialog = async (page: Page): Promise<Locator> => {
+  const uploadAction = getDashboardSection(page, 'Quick actions').getByRole(
+    'button',
+    { name: /Upload base resume/ },
+  )
+
+  await expect(uploadAction).toBeEnabled()
+  await uploadAction.click()
+
+  const dialog = page.getByRole('dialog', { name: 'Upload base resume' })
+
+  await expect(dialog).toBeVisible()
+  return dialog
+}
+
+const selectPdfInDialog = async (
+  dialog: Locator,
+  input: {
+    body: Buffer
+    filename: string
+  },
+): Promise<void> => {
+  await dialog.locator('input[type="file"]').setInputFiles({
+    buffer: input.body,
+    mimeType: 'application/pdf',
+    name: input.filename,
+  })
+}
+
+const uploadPdfThroughDashboard = async (
+  page: Page,
+  input: {
+    body: Buffer
+    filename: string
+  },
+): Promise<void> => {
+  const dialog = await openUploadDialog(page)
+
+  await selectPdfInDialog(dialog, input)
+  await expect(dialog.getByText(input.filename)).toBeVisible()
+  await dialog.getByRole('button', { name: 'Upload resume' }).click()
+  await expect(dialog.getByText('Upload complete')).toBeVisible()
+  await expect(dialog.getByText(input.filename)).toBeVisible()
+  await dialog.getByRole('button', { name: 'Done' }).click()
+  await expect(dialog).toBeHidden()
+}
+
 test('persists one exact row and immutable private object for a valid authenticated upload', async ({
   context,
   page,
@@ -413,4 +464,118 @@ test('keeps three deterministic rows and objects under concurrent capacity press
       ),
     ),
   )
+})
+
+test('completes the accessible dashboard upload journey and preserves all three resumes after reload', async ({
+  context,
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const owner = await createAuthenticatedTestUser(context, page)
+  const uploadRequests: string[] = []
+
+  page.on('request', (request) => {
+    if (
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname === '/api/base-resumes'
+    ) {
+      uploadRequests.push(request.url())
+    }
+  })
+
+  await expect(
+    getDashboardSection(page, 'Base resumes').getByText(
+      'No base resumes have been added yet.',
+    ),
+  ).toBeVisible()
+
+  const firstDialog = await openUploadDialog(page)
+
+  await expect(firstDialog.getByText('PDF only')).toBeVisible()
+  await expect(firstDialog.getByText('Maximum 10 MiB')).toBeVisible()
+  await expect(
+    firstDialog.getByText('0 of 3 active resumes · 3 slots remaining'),
+  ).toBeVisible()
+  await expect(
+    firstDialog.evaluate(
+      () => window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    ),
+  ).resolves.toBe(true)
+
+  await selectPdfInDialog(firstDialog, {
+    body: Buffer.from('This is not a PDF.'),
+    filename: 'Invalid Resume.pdf',
+  })
+  await expect(firstDialog.getByRole('alert')).toContainText(
+    'This file does not appear to be a valid PDF.',
+  )
+  expect(uploadRequests).toHaveLength(0)
+
+  const firstFilename = 'Frontend Engineering.pdf'
+
+  await selectPdfInDialog(firstDialog, {
+    body: createPdfBody('dashboard-first'),
+    filename: firstFilename,
+  })
+  await firstDialog.getByRole('button', { name: 'Upload resume' }).click()
+  await expect(firstDialog.getByText('Upload complete')).toBeVisible()
+  await expect(
+    firstDialog.getByText('Saved as active resume slot 1.'),
+  ).toBeVisible()
+  await expect(
+    getDashboardSection(page, 'Base resumes').getByText(firstFilename),
+  ).toBeVisible()
+  expect(uploadRequests).toHaveLength(1)
+  await firstDialog.getByRole('button', { name: 'Done' }).click()
+
+  const remainingResumes = [
+    {
+      body: createPdfBody('dashboard-second'),
+      filename: 'Accessibility Engineering.pdf',
+    },
+    {
+      body: createPdfBody('dashboard-third'),
+      filename: 'Product Engineering.pdf',
+    },
+  ]
+
+  for (const resume of remainingResumes) {
+    await uploadPdfThroughDashboard(page, resume)
+  }
+
+  const baseResumes = getDashboardSection(page, 'Base resumes')
+  const quickActions = getDashboardSection(page, 'Quick actions')
+  const uploadAction = quickActions.getByRole('button', {
+    name: /Upload base resume/,
+  })
+
+  await expect(baseResumes.getByText('3 of 3 resumes')).toBeVisible()
+  await expect(baseResumes.getByText('Slot 1')).toBeVisible()
+  await expect(baseResumes.getByText('Slot 2')).toBeVisible()
+  await expect(baseResumes.getByText('Slot 3')).toBeVisible()
+  await expect(uploadAction).toBeDisabled()
+  await expect(uploadAction).toContainText('All three resume slots are in use')
+  await expect(
+    baseResumes.getByRole('button', { name: /Upload base resume/ }),
+  ).toHaveCount(0)
+  expect(uploadRequests).toHaveLength(3)
+
+  await page.reload({ waitUntil: 'networkidle' })
+
+  for (const filename of [
+    firstFilename,
+    ...remainingResumes.map(({ filename }) => filename),
+  ]) {
+    await expect(
+      getDashboardSection(page, 'Base resumes').getByText(filename),
+    ).toBeVisible()
+  }
+
+  const { count, error } = await owner.client
+    .from('base_resumes')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', owner.user.id)
+
+  expect(error).toBeNull()
+  expect(count).toBe(3)
 })

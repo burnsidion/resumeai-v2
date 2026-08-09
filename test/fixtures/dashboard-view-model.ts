@@ -26,6 +26,7 @@ export const populatedDashboardViewModel = {
     emptyMessage: null,
     items: [
       {
+        activeSlot: 1,
         addedLabel: 'Added Jul 20',
         createdAt: '2026-07-20T18:00:00+00:00',
         filename: 'Frontend Engineering.pdf',
@@ -33,6 +34,7 @@ export const populatedDashboardViewModel = {
         statusLabel: 'Active',
       },
       {
+        activeSlot: 2,
         addedLabel: 'Added Jul 14',
         createdAt: '2026-07-14T18:00:00+00:00',
         filename: 'Accessibility Specialist.pdf',
@@ -52,7 +54,7 @@ export const populatedDashboardViewModel = {
       label: 'Create application',
     },
     {
-      availability: 'unavailable',
+      availability: 'available',
       description: '2 of 3 resumes',
       icon: 'upload',
       id: 'upload-base-resume',
@@ -114,7 +116,8 @@ export const populatedDashboardViewModel = {
 export const emptyDashboardViewModel = {
   attention: {
     action: {
-      availability: 'unavailable',
+      availability: 'available',
+      id: 'upload-base-resume',
       label: 'Upload base resume',
     },
     description:
@@ -141,7 +144,7 @@ export const emptyDashboardViewModel = {
       label: 'Create application',
     },
     {
-      availability: 'unavailable',
+      availability: 'available',
       description: '0 of 3 resumes',
       icon: 'upload',
       id: 'upload-base-resume',
