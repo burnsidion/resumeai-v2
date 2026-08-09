@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { baseResumesManagementDataSchema } from '../../shared/product-data/base-resumes'
 import {
   applicationStatusSchema,
   dashboardProductDataSchema,
@@ -48,6 +49,27 @@ const populatedProductData = {
     },
   ],
 }
+
+const populatedBaseResumesManagementData = {
+  activeCount: 2,
+  activeLimit: 3,
+  items: [
+    {
+      activeSlot: 1,
+      createdAt: '2026-07-20T18:00:00+00:00',
+      id: '465e390d-f7cd-4f11-ac19-80a6cf9760fb',
+      originalFilename: 'Frontend Engineering.pdf',
+      sizeBytes: 493_568,
+    },
+    {
+      activeSlot: 2,
+      createdAt: '2026-07-14T18:00:00+00:00',
+      id: '2d1f2ca0-a46e-42df-99c9-5a362f291a46',
+      originalFilename: 'Accessibility Specialist.pdf',
+      sizeBytes: 628_736,
+    },
+  ],
+} as const
 
 describe('application status contract', () => {
   it.each([
@@ -130,5 +152,70 @@ describe('dashboard product-data contract', () => {
     const result = dashboardProductDataSchema.parse(populatedProductData)
 
     expect(result.baseResumes.items[0]).not.toHaveProperty('primary')
+  })
+})
+
+describe('base-resumes management product-data contract', () => {
+  it('accepts a partial-capacity active-resume collection', () => {
+    expect(
+      baseResumesManagementDataSchema.parse(populatedBaseResumesManagementData),
+    ).toEqual(populatedBaseResumesManagementData)
+  })
+
+  it('accepts both zero and full active-resume states', () => {
+    expect(
+      baseResumesManagementDataSchema.parse({
+        activeCount: 0,
+        activeLimit: 3,
+        items: [],
+      }),
+    ).toEqual({ activeCount: 0, activeLimit: 3, items: [] })
+
+    const fullState = {
+      ...populatedBaseResumesManagementData,
+      activeCount: 3,
+      items: [
+        ...populatedBaseResumesManagementData.items,
+        {
+          activeSlot: 3,
+          createdAt: '2026-07-01T18:00:00+00:00',
+          id: '7077c821-56ad-4a0a-921f-68a1020a5652',
+          originalFilename: 'Product Engineer.pdf',
+          sizeBytes: 716_800,
+        },
+      ],
+    }
+
+    expect(baseResumesManagementDataSchema.parse(fullState)).toEqual(fullState)
+  })
+
+  it('rejects mismatched counts and non-deterministic slot ordering', () => {
+    const mismatchedCount = baseResumesManagementDataSchema.safeParse({
+      ...populatedBaseResumesManagementData,
+      activeCount: 1,
+    })
+    const outOfOrder = baseResumesManagementDataSchema.safeParse({
+      ...populatedBaseResumesManagementData,
+      items: [...populatedBaseResumesManagementData.items].reverse(),
+    })
+
+    expect(mismatchedCount.success).toBe(false)
+    expect(outOfOrder.success).toBe(false)
+  })
+
+  it('rejects fields that would expose storage or ownership details', () => {
+    const result = baseResumesManagementDataSchema.safeParse({
+      ...populatedBaseResumesManagementData,
+      items: [
+        {
+          ...populatedBaseResumesManagementData.items[0],
+          storageObjectKey: 'private/storage/object.pdf',
+          userId: '7bd6a80d-1a72-47b7-b55f-60a55507fd2a',
+        },
+        populatedBaseResumesManagementData.items[1],
+      ],
+    })
+
+    expect(result.success).toBe(false)
   })
 })

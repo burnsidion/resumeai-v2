@@ -6,6 +6,7 @@ import {
 import { expect, type BrowserContext, test } from '@playwright/test'
 
 import type { Database } from '../../server/infrastructure/supabase/database.generated'
+import { getBaseResumesProductData } from '../../server/services/base-resumes-product-data'
 import { getDashboardProductData } from '../../server/services/dashboard-product-data'
 
 const applicationUrl =
@@ -24,6 +25,7 @@ interface AuthenticatedTestUser {
 interface ProductFixture {
   applicationId: string
   baseResumeId: string
+  retiredBaseResumeId: string
   workingCopyId: string
 }
 
@@ -159,6 +161,7 @@ const createProductFixture = async (
   const applicationId = crypto.randomUUID()
   const baseResumeId = crypto.randomUUID()
   const interpretationId = crypto.randomUUID()
+  const retiredBaseResumeId = crypto.randomUUID()
   const workingCopyId = crypto.randomUUID()
   const resumeHash = 'a'.repeat(64)
   const interpretationHash = 'b'.repeat(64)
@@ -176,6 +179,23 @@ const createProductFixture = async (
     })
 
   expect(baseResumeError).toBeNull()
+
+  const retiredAt = new Date().toISOString()
+  const { error: retiredBaseResumeError } = await authenticatedUser.client
+    .from('base_resumes')
+    .insert({
+      active_slot: null,
+      content_sha256: 'd'.repeat(64),
+      created_at: retiredAt,
+      original_filename: `${label} Retired Resume.pdf`,
+      id: retiredBaseResumeId,
+      retired_at: retiredAt,
+      size_bytes: 2048,
+      storage_object_key: `${authenticatedUser.user.id}/${retiredBaseResumeId}.pdf`,
+      user_id: authenticatedUser.user.id,
+    })
+
+  expect(retiredBaseResumeError).toBeNull()
 
   const { error: interpretationError } = await authenticatedUser.client
     .from('resume_interpretations')
@@ -230,6 +250,7 @@ const createProductFixture = async (
   return {
     applicationId,
     baseResumeId,
+    retiredBaseResumeId,
     workingCopyId,
   }
 }
@@ -268,6 +289,38 @@ test('returns only authenticated owner data through the server product-data laye
     workingCopyId: ownerOneFixture.workingCopyId,
   })
 
+  const ownerOneBaseResumes = await getBaseResumesProductData({
+    client: ownerOne.client,
+    userId: ownerOne.user.id,
+  })
+
+  expect(ownerOneBaseResumes).toEqual({
+    activeCount: 1,
+    activeLimit: 3,
+    items: [
+      {
+        activeSlot: 1,
+        createdAt: expect.any(String),
+        id: ownerOneFixture.baseResumeId,
+        originalFilename: 'Owner One Resume.pdf',
+        sizeBytes: 1024,
+      },
+    ],
+  })
+  expect(ownerOneBaseResumes.items).not.toContainEqual(
+    expect.objectContaining({ id: ownerOneFixture.retiredBaseResumeId }),
+  )
+  expect(ownerOneBaseResumes.items).not.toContainEqual(
+    expect.objectContaining({ id: ownerTwoFixture.baseResumeId }),
+  )
+  expect(Object.keys(ownerOneBaseResumes.items[0] ?? {}).sort()).toEqual([
+    'activeSlot',
+    'createdAt',
+    'id',
+    'originalFilename',
+    'sizeBytes',
+  ])
+
   await expect(
     getDashboardProductData({
       client: ownerOne.client,
@@ -285,5 +338,16 @@ test('returns only authenticated owner data through the server product-data laye
     },
     readyForReview: null,
     recentApplications: [],
+  })
+
+  await expect(
+    getBaseResumesProductData({
+      client: ownerOne.client,
+      userId: ownerTwo.user.id,
+    }),
+  ).resolves.toEqual({
+    activeCount: 0,
+    activeLimit: 3,
+    items: [],
   })
 })

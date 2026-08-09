@@ -9,6 +9,7 @@ import {
 } from '../../server/repositories/applications'
 import {
   ACTIVE_BASE_RESUME_LIMIT,
+  createBaseResumesManagementRepository,
   createBaseResumesRepository,
 } from '../../server/repositories/base-resumes'
 import { ProductDataRepositoryError } from '../../server/repositories/product-data/errors'
@@ -312,6 +313,131 @@ describe('base-resumes repository', () => {
     await expectSanitizedRepositoryFailure(
       () => repository.getActive(),
       'read-active-base-resumes',
+    )
+  })
+
+  it('returns the narrow management projection in deterministic slot order', async () => {
+    const { client, fetchMock } = createFakeClient(
+      jsonResponse(
+        [
+          {
+            active_slot: 1,
+            content_sha256: 'a'.repeat(64),
+            created_at: '2026-07-20T18:00:00+00:00',
+            id: '465e390d-f7cd-4f11-ac19-80a6cf9760fb',
+            original_filename: 'Frontend Engineering.pdf',
+            retired_at: null,
+            size_bytes: 493_568,
+            storage_object_key: `${userId}/private-source.pdf`,
+            user_id: userId,
+          },
+          {
+            active_slot: 2,
+            content_sha256: 'b'.repeat(64),
+            created_at: '2026-07-14T18:00:00+00:00',
+            id: '2d1f2ca0-a46e-42df-99c9-5a362f291a46',
+            original_filename: 'Accessibility Specialist.pdf',
+            retired_at: null,
+            size_bytes: 628_736,
+            storage_object_key: `${userId}/private-source-2.pdf`,
+            user_id: userId,
+          },
+        ],
+        { contentRange: '0-1/2' },
+      ),
+    )
+    const repository = createBaseResumesManagementRepository({
+      client,
+      userId,
+    })
+
+    await expect(repository.getActiveForManagement()).resolves.toEqual({
+      activeCount: 2,
+      activeLimit: 3,
+      items: [
+        {
+          activeSlot: 1,
+          createdAt: '2026-07-20T18:00:00+00:00',
+          id: '465e390d-f7cd-4f11-ac19-80a6cf9760fb',
+          originalFilename: 'Frontend Engineering.pdf',
+          sizeBytes: 493_568,
+        },
+        {
+          activeSlot: 2,
+          createdAt: '2026-07-14T18:00:00+00:00',
+          id: '2d1f2ca0-a46e-42df-99c9-5a362f291a46',
+          originalFilename: 'Accessibility Specialist.pdf',
+          sizeBytes: 628_736,
+        },
+      ],
+    })
+
+    const request = getRequest(fetchMock)
+
+    expect(request.url.searchParams.get('select')).toBe(
+      'id,original_filename,active_slot,created_at,size_bytes',
+    )
+    expect(request.url.searchParams.get('user_id')).toBe(`eq.${userId}`)
+    expect(request.url.searchParams.get('active_slot')).toBe('not.is.null')
+    expect(request.url.searchParams.get('retired_at')).toBe('is.null')
+    expect(request.url.searchParams.get('order')).toBe('active_slot.asc,id.asc')
+    expect(request.url.searchParams.get('limit')).toBe(
+      ACTIVE_BASE_RESUME_LIMIT.toString(),
+    )
+  })
+
+  it('returns the empty management state truthfully', async () => {
+    const { client } = createFakeClient(
+      jsonResponse([], { contentRange: '*/0' }),
+    )
+    const repository = createBaseResumesManagementRepository({
+      client,
+      userId,
+    })
+
+    await expect(repository.getActiveForManagement()).resolves.toEqual({
+      activeCount: 0,
+      activeLimit: 3,
+      items: [],
+    })
+  })
+
+  it('sanitizes provider failures for management reads', async () => {
+    const { client } = createFakeClient(providerErrorResponse())
+    const repository = createBaseResumesManagementRepository({
+      client,
+      userId,
+    })
+
+    await expectSanitizedRepositoryFailure(
+      () => repository.getActiveForManagement(),
+      'read-active-base-resumes-management',
+    )
+  })
+
+  it('sanitizes unexpected management values at the repository boundary', async () => {
+    const { client } = createFakeClient(
+      jsonResponse(
+        [
+          {
+            active_slot: 4,
+            created_at: '2026-07-20T18:00:00+00:00',
+            id: '465e390d-f7cd-4f11-ac19-80a6cf9760fb',
+            original_filename: 'Frontend Engineering.pdf',
+            size_bytes: 493_568,
+          },
+        ],
+        { contentRange: '0-0/1' },
+      ),
+    )
+    const repository = createBaseResumesManagementRepository({
+      client,
+      userId,
+    })
+
+    await expectSanitizedRepositoryFailure(
+      () => repository.getActiveForManagement(),
+      'read-active-base-resumes-management',
     )
   })
 })
