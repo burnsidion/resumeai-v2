@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Standalone ResumAI Base Resumes management page design prototype"
+    />
+    <title>ResumAI — Base Resumes Prototype</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <svg class="icon-library" aria-hidden="true">
+      <symbol id="icon-dashboard" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </symbol>
+      <symbol id="icon-briefcase" viewBox="0 0 24 24">
+        <path
+          d="M9 7V5.75A1.75 1.75 0 0 1 10.75 4h2.5A1.75 1.75 0 0 1 15 5.75V7"
+        />
+        <rect x="3" y="7" width="18" height="13" rx="2" />
+        <path d="M3 12.5h18M9.5 12.5v1h5v-1" />
+      </symbol>
+      <symbol id="icon-document" viewBox="0 0 24 24">
+        <path d="M6 3h8l4 4v14H6z" />
+        <path d="M14 3v5h5M9 13h6M9 17h6" />
+      </symbol>
+      <symbol id="icon-upload" viewBox="0 0 24 24">
+        <path d="M12 16V4M7.5 8.5 12 4l4.5 4.5" />
+        <path d="M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+      </symbol>
+      <symbol id="icon-lock" viewBox="0 0 24 24">
+        <rect x="5" y="10" width="14" height="10" rx="2" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      </symbol>
+      <symbol id="icon-user" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="3.5" />
+        <path d="M5 20a7 7 0 0 1 14 0" />
+      </symbol>
+      <symbol id="icon-menu" viewBox="0 0 24 24">
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      </symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24">
+        <path d="m6 6 12 12M18 6 6 18" />
+      </symbol>
+      <symbol id="icon-warning" viewBox="0 0 24 24">
+        <path d="M12 3 2.8 20h18.4L12 3Z" />
+        <path d="M12 9v4M12 17h.01" />
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M20 7v5h-5" />
+        <path d="M19 12a7 7 0 1 0-2 5" />
+      </symbol>
+      <symbol id="icon-chevron" viewBox="0 0 24 24">
+        <path d="m9 18 6-6-6-6" />
+      </symbol>
+    </svg>
+
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-empty"
+      checked
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-one"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-two"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-full"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-loading"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-error"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-retirement"
+    />
+
+    <header class="prototype-controls">
+      <div>
+        <strong>Base Resumes prototype</strong>
+        <span>Reference controls — not product UI</span>
+      </div>
+      <fieldset>
+        <legend>Preview page state</legend>
+        <label for="state-empty">Empty</label>
+        <label for="state-one">One resume</label>
+        <label for="state-two">Two resumes</label>
+        <label for="state-full">Full</label>
+        <label for="state-loading">Loading</label>
+        <label for="state-error">Error</label>
+        <label for="state-retirement">Retirement dialog</label>
+      </fieldset>
+    </header>
+
+    <div class="application-shell">
+      <aside
+        class="desktop-sidebar"
+        aria-label="Authenticated application sidebar"
+      >
+        <div class="sidebar-main">
+          <div class="brand">Resum<span>AI</span></div>
+
+          <nav aria-label="Primary navigation">
+            <ul class="navigation-list">
+              <li>
+                <span class="navigation-item">
+                  <svg><use href="#icon-dashboard" /></svg>
+                  <span>Dashboard</span>
+                </span>
+              </li>
+              <li>
+                <span class="navigation-item">
+                  <svg><use href="#icon-briefcase" /></svg>
+                  <span>Applications</span>
+                </span>
+              </li>
+              <li>
+                <span
+                  class="navigation-item navigation-item--active"
+                  aria-current="page"
+                >
+                  <svg><use href="#icon-document" /></svg>
+                  <span>Base resumes</span>
+                </span>
+              </li>
+            </ul>
+          </nav>
+
+          <div class="sidebar-spacer"></div>
+          <p class="sidebar-note">
+            Source documents remain private and unchanged.
+          </p>
+        </div>
+
+        <div class="identity-card">
+          <span class="avatar" aria-hidden="true">IB</span>
+          <span class="identity-copy">
+            <strong>Ian Burnside</strong>
+            <span>ian@example.com</span>
+          </span>
+          <svg aria-hidden="true"><use href="#icon-chevron" /></svg>
+        </div>
+      </aside>
+
+      <aside
+        class="tablet-rail"
+        aria-label="Collapsed authenticated navigation"
+      >
+        <div class="rail-brand" aria-label="ResumAI">RA</div>
+        <nav aria-label="Primary navigation">
+          <span class="rail-item" aria-label="Dashboard" title="Dashboard">
+            <svg><use href="#icon-dashboard" /></svg>
+          </span>
+          <span
+            class="rail-item"
+            aria-label="Applications"
+            title="Applications"
+          >
+            <svg><use href="#icon-briefcase" /></svg>
+          </span>
+          <span
+            class="rail-item rail-item--active"
+            aria-label="Base resumes, current page"
+            title="Base resumes"
+          >
+            <svg><use href="#icon-document" /></svg>
+          </span>
+        </nav>
+        <span class="rail-avatar" aria-label="Authenticated as Ian Burnside"
+          >IB</span
+        >
+      </aside>
+
+      <header class="mobile-topbar">
+        <div class="brand">Resum<span>AI</span></div>
+        <details class="mobile-navigation">
+          <summary aria-label="Open navigation">
+            <svg><use href="#icon-menu" /></svg>
+          </summary>
+          <div class="mobile-navigation-panel">
+            <div class="mobile-navigation-heading">
+              <strong>Navigation</strong>
+              <span>Ian Burnside</span>
+            </div>
+            <nav aria-label="Mobile navigation">
+              <span class="navigation-item">
+                <svg><use href="#icon-dashboard" /></svg>
+                Dashboard
+              </span>
+              <span class="navigation-item">
+                <svg><use href="#icon-briefcase" /></svg>
+                Applications
+              </span>
+              <span
+                class="navigation-item navigation-item--active"
+                aria-current="page"
+              >
+                <svg><use href="#icon-document" /></svg>
+                Base resumes
+              </span>
+            </nav>
+          </div>
+        </details>
+      </header>
+
+      <main class="page-frame">
+        <section class="page-state page-state--empty">
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Source documents</p>
+              <h1>Base resumes</h1>
+              <p class="page-summary">
+                Keep up to three existing PDF resumes ready for new applications
+                and tailoring. Uploaded originals stay private and unchanged.
+              </p>
+            </div>
+            <button class="button button--primary" type="button">
+              <svg><use href="#icon-upload" /></svg>
+              Upload base resume
+            </button>
+          </header>
+
+          <section
+            class="capacity-panel"
+            aria-labelledby="empty-capacity-heading"
+          >
+            <div>
+              <p class="capacity-label">Active capacity</p>
+              <h2 id="empty-capacity-heading">0 of 3 resumes</h2>
+              <p>Three slots available</p>
+            </div>
+            <div
+              class="capacity-meter"
+              aria-label="Zero of three active resume slots used"
+            >
+              <span></span><span></span><span></span>
+            </div>
+          </section>
+
+          <section class="empty-panel" aria-labelledby="empty-heading">
+            <span class="hero-document-icon" aria-hidden="true">
+              <svg><use href="#icon-document" /></svg>
+            </span>
+            <p class="eyebrow">Start with a source you trust</p>
+            <h2 id="empty-heading">Add your first base resume</h2>
+            <p>
+              Upload an existing PDF to use as the starting point for future
+              applications. ResumAI stores the original without editing it.
+            </p>
+            <button class="button button--primary" type="button">
+              <svg><use href="#icon-upload" /></svg>
+              Choose a PDF
+            </button>
+            <div class="requirement-row" aria-label="Upload requirements">
+              <span>PDF only</span><i aria-hidden="true"></i
+              ><span>Maximum 10 MiB</span>
+            </div>
+          </section>
+        </section>
+
+        <section class="page-state page-state--one">
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Source documents</p>
+              <h1>Base resumes</h1>
+              <p class="page-summary">
+                Keep up to three existing PDF resumes ready for new applications
+                and tailoring. Uploaded originals stay private and unchanged.
+              </p>
+            </div>
+            <button class="button button--primary" type="button">
+              <svg><use href="#icon-upload" /></svg>
+              Upload base resume
+            </button>
+          </header>
+
+          <section
+            class="capacity-panel"
+            aria-labelledby="one-capacity-heading"
+          >
+            <div>
+              <p class="capacity-label">Active capacity</p>
+              <h2 id="one-capacity-heading">1 of 3 resumes</h2>
+              <p>Two slots available</p>
+            </div>
+            <div
+              class="capacity-meter"
+              aria-label="One of three active resume slots used"
+            >
+              <span class="capacity-meter__active"></span><span></span
+              ><span></span>
+            </div>
+          </section>
+
+          <section class="collection" aria-labelledby="one-collection-heading">
+            <div class="collection-heading">
+              <div>
+                <h2 id="one-collection-heading">Active base resumes</h2>
+                <p>Available for new applications and tailoring.</p>
+              </div>
+              <span>1 active</span>
+            </div>
+            <ul class="resume-grid">
+              <li>
+                <article class="resume-card">
+                  <div class="resume-card__topline">
+                    <span class="document-icon"
+                      ><svg><use href="#icon-document" /></svg
+                    ></span>
+                    <span class="status"><i aria-hidden="true"></i>Active</span>
+                  </div>
+                  <div class="resume-card__identity">
+                    <span class="slot-label">Slot 1</span>
+                    <h3>Frontend Engineering.pdf</h3>
+                    <p>PDF <i aria-hidden="true"></i> 482 KiB</p>
+                    <p>Uploaded August 8, 2026</p>
+                  </div>
+                  <div class="immutable-note">
+                    <svg><use href="#icon-lock" /></svg>
+                    <span
+                      ><strong>Original PDF preserved</strong>ResumAI never
+                      edits this source file.</span
+                    >
+                  </div>
+                  <button class="text-action" type="button">
+                    Retire resume
+                  </button>
+                </article>
+              </li>
+              <li>
+                <button class="add-card" type="button">
+                  <span class="add-card__icon"
+                    ><svg><use href="#icon-upload" /></svg
+                  ></span>
+                  <span
+                    ><strong>Upload another base resume</strong>Two active slots
+                    remain</span
+                  >
+                </button>
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section class="page-state page-state--two">
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Source documents</p>
+              <h1>Base resumes</h1>
+              <p class="page-summary">
+                Keep up to three existing PDF resumes ready for new applications
+                and tailoring. Uploaded originals stay private and unchanged.
+              </p>
+            </div>
+            <button class="button button--primary" type="button">
+              <svg><use href="#icon-upload" /></svg>
+              Upload base resume
+            </button>
+          </header>
+
+          <section
+            class="capacity-panel"
+            aria-labelledby="two-capacity-heading"
+          >
+            <div>
+              <p class="capacity-label">Active capacity</p>
+              <h2 id="two-capacity-heading">2 of 3 resumes</h2>
+              <p>One slot available</p>
+            </div>
+            <div
+              class="capacity-meter"
+              aria-label="Two of three active resume slots used"
+            >
+              <span class="capacity-meter__active"></span>
+              <span class="capacity-meter__active"></span>
+              <span></span>
+            </div>
+          </section>
+
+          <section class="collection" aria-labelledby="two-collection-heading">
+            <div class="collection-heading">
+              <div>
+                <h2 id="two-collection-heading">Active base resumes</h2>
+                <p>Available for new applications and tailoring.</p>
+              </div>
+              <span>2 active</span>
+            </div>
+            <ul class="resume-grid">
+              <li>
+                <article class="resume-card">
+                  <div class="resume-card__topline">
+                    <span class="document-icon"
+                      ><svg><use href="#icon-document" /></svg
+                    ></span>
+                    <span class="status"><i aria-hidden="true"></i>Active</span>
+                  </div>
+                  <div class="resume-card__identity">
+                    <span class="slot-label">Slot 1</span>
+                    <h3>Frontend Engineering.pdf</h3>
+                    <p>PDF <i aria-hidden="true"></i> 482 KiB</p>
+                    <p>Uploaded August 8, 2026</p>
+                  </div>
+                  <div class="immutable-note">
+                    <svg><use href="#icon-lock" /></svg>
+                    <span
+                      ><strong>Original PDF preserved</strong>ResumAI never
+                      edits this source file.</span
+                    >
+                  </div>
+                  <button class="text-action" type="button">
+                    Retire resume
+                  </button>
+                </article>
+              </li>
+              <li>
+                <article class="resume-card">
+                  <div class="resume-card__topline">
+                    <span class="document-icon"
+                      ><svg><use href="#icon-document" /></svg
+                    ></span>
+                    <span class="status"><i aria-hidden="true"></i>Active</span>
+                  </div>
+                  <div class="resume-card__identity">
+                    <span class="slot-label">Slot 2</span>
+                    <h3>Accessibility Specialist.pdf</h3>
+                    <p>PDF <i aria-hidden="true"></i> 615 KiB</p>
+                    <p>Uploaded August 2, 2026</p>
+                  </div>
+                  <div class="immutable-note">
+                    <svg><use href="#icon-lock" /></svg>
+                    <span
+                      ><strong>Original PDF preserved</strong>ResumAI never
+                      edits this source file.</span
+                    >
+                  </div>
+                  <button class="text-action" type="button">
+                    Retire resume
+                  </button>
+                </article>
+              </li>
+              <li>
+                <button class="add-card" type="button">
+                  <span class="add-card__icon"
+                    ><svg><use href="#icon-upload" /></svg
+                  ></span>
+                  <span
+                    ><strong>Upload another base resume</strong>One active slot
+                    remains</span
+                  >
+                </button>
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section class="page-state page-state--full">
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Source documents</p>
+              <h1>Base resumes</h1>
+              <p class="page-summary">
+                Keep up to three existing PDF resumes ready for new applications
+                and tailoring. Uploaded originals stay private and unchanged.
+              </p>
+            </div>
+          </header>
+
+          <section
+            class="capacity-panel capacity-panel--full"
+            aria-labelledby="full-capacity-heading"
+          >
+            <div>
+              <p class="capacity-label">Active capacity</p>
+              <h2 id="full-capacity-heading">3 of 3 resumes</h2>
+              <p>All active slots are in use</p>
+            </div>
+            <div
+              class="capacity-meter"
+              aria-label="All three active resume slots used"
+            >
+              <span class="capacity-meter__active"></span>
+              <span class="capacity-meter__active"></span>
+              <span class="capacity-meter__active"></span>
+            </div>
+          </section>
+
+          <section class="collection" aria-labelledby="full-collection-heading">
+            <div class="collection-heading">
+              <div>
+                <h2 id="full-collection-heading">Active base resumes</h2>
+                <p>Retire a resume to make another active slot available.</p>
+              </div>
+              <span>3 active</span>
+            </div>
+            <ul class="resume-grid">
+              <li>
+                <article class="resume-card">
+                  <div class="resume-card__topline">
+                    <span class="document-icon"
+                      ><svg><use href="#icon-document" /></svg
+                    ></span>
+                    <span class="status"><i aria-hidden="true"></i>Active</span>
+                  </div>
+                  <div class="resume-card__identity">
+                    <span class="slot-label">Slot 1</span>
+                    <h3>Frontend Engineering.pdf</h3>
+                    <p>PDF <i aria-hidden="true"></i> 482 KiB</p>
+                    <p>Uploaded August 8, 2026</p>
+                  </div>
+                  <div class="immutable-note">
+                    <svg><use href="#icon-lock" /></svg
+                    ><span
+                      ><strong>Original PDF preserved</strong>ResumAI never
+                      edits this source file.</span
+                    >
+                  </div>
+                  <button class="text-action" type="button">
+                    Retire resume
+                  </button>
+                </article>
+              </li>
+              <li>
+                <article class="resume-card">
+                  <div class="resume-card__topline">
+                    <span class="document-icon"
+                      ><svg><use href="#icon-document" /></svg
+                    ></span>
+                    <span class="status"><i aria-hidden="true"></i>Active</span>
+                  </div>
+                  <div class="resume-card__identity">
+                    <span class="slot-label">Slot 2</span>
+                    <h3>Accessibility Specialist.pdf</h3>
+                    <p>PDF <i aria-hidden="true"></i> 615 KiB</p>
+                    <p>Uploaded August 2, 2026</p>
+                  </div>
+                  <div class="immutable-note">
+                    <svg><use href="#icon-lock" /></svg
+                    ><span
+                      ><strong>Original PDF preserved</strong>ResumAI never
+                      edits this source file.</span
+                    >
+                  </div>
+                  <button class="text-action" type="button">
+                    Retire resume
+                  </button>
+                </article>
+              </li>
+              <li>
+                <article class="resume-card">
+                  <div class="resume-card__topline">
+                    <span class="document-icon"
+                      ><svg><use href="#icon-document" /></svg
+                    ></span>
+                    <span class="status"><i aria-hidden="true"></i>Active</span>
+                  </div>
+                  <div class="resume-card__identity">
+                    <span class="slot-label">Slot 3</span>
+                    <h3>Product Engineering.pdf</h3>
+                    <p>PDF <i aria-hidden="true"></i> 528 KiB</p>
+                    <p>Uploaded July 27, 2026</p>
+                  </div>
+                  <div class="immutable-note">
+                    <svg><use href="#icon-lock" /></svg
+                    ><span
+                      ><strong>Original PDF preserved</strong>ResumAI never
+                      edits this source file.</span
+                    >
+                  </div>
+                  <button class="text-action" type="button">
+                    Retire resume
+                  </button>
+                </article>
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section class="page-state page-state--loading" aria-busy="true">
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Source documents</p>
+              <h1>Base resumes</h1>
+              <p class="page-summary">
+                Keep up to three existing PDF resumes ready for new applications
+                and tailoring. Uploaded originals stay private and unchanged.
+              </p>
+            </div>
+            <span class="skeleton skeleton--button" aria-hidden="true"></span>
+          </header>
+          <p class="sr-only" role="status">Loading base resumes.</p>
+          <div
+            class="capacity-panel capacity-panel--skeleton"
+            aria-hidden="true"
+          >
+            <div>
+              <span class="skeleton skeleton--label"></span
+              ><span class="skeleton skeleton--title"></span
+              ><span class="skeleton skeleton--copy"></span>
+            </div>
+            <div class="capacity-meter">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <section class="collection" aria-hidden="true">
+            <div class="collection-heading">
+              <div>
+                <span class="skeleton skeleton--title"></span
+                ><span class="skeleton skeleton--copy"></span>
+              </div>
+            </div>
+            <div class="resume-grid">
+              <div class="resume-card skeleton-card">
+                <span class="skeleton skeleton--icon"></span
+                ><span class="skeleton skeleton--label"></span
+                ><span class="skeleton skeleton--heading"></span
+                ><span class="skeleton skeleton--copy"></span
+                ><span class="skeleton skeleton--note"></span>
+              </div>
+              <div class="resume-card skeleton-card">
+                <span class="skeleton skeleton--icon"></span
+                ><span class="skeleton skeleton--label"></span
+                ><span class="skeleton skeleton--heading"></span
+                ><span class="skeleton skeleton--copy"></span
+                ><span class="skeleton skeleton--note"></span>
+              </div>
+              <div class="resume-card skeleton-card">
+                <span class="skeleton skeleton--icon"></span
+                ><span class="skeleton skeleton--label"></span
+                ><span class="skeleton skeleton--heading"></span
+                ><span class="skeleton skeleton--copy"></span
+                ><span class="skeleton skeleton--note"></span>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="page-state page-state--error">
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Source documents</p>
+              <h1>Base resumes</h1>
+              <p class="page-summary">
+                Keep up to three existing PDF resumes ready for new applications
+                and tailoring. Uploaded originals stay private and unchanged.
+              </p>
+            </div>
+          </header>
+          <section
+            class="error-panel"
+            role="alert"
+            aria-labelledby="error-heading"
+          >
+            <span class="error-icon" aria-hidden="true"
+              ><svg><use href="#icon-warning" /></svg
+            ></span>
+            <p class="eyebrow">Something interrupted the request</p>
+            <h2 id="error-heading">Base resumes unavailable</h2>
+            <p>
+              We could not load your active base resumes. Nothing has been
+              changed. Try the request again.
+            </p>
+            <button class="button button--secondary" type="button">
+              <svg><use href="#icon-refresh" /></svg>
+              Try again
+            </button>
+          </section>
+        </section>
+
+        <section class="page-state page-state--retirement" aria-hidden="true">
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Source documents</p>
+              <h1>Base resumes</h1>
+              <p class="page-summary">
+                Keep up to three existing PDF resumes ready for new applications
+                and tailoring. Uploaded originals stay private and unchanged.
+              </p>
+            </div>
+          </header>
+          <section class="capacity-panel">
+            <div>
+              <p class="capacity-label">Active capacity</p>
+              <h2>2 of 3 resumes</h2>
+              <p>One slot available</p>
+            </div>
+            <div class="capacity-meter">
+              <span class="capacity-meter__active"></span
+              ><span class="capacity-meter__active"></span><span></span>
+            </div>
+          </section>
+          <section class="collection">
+            <div class="collection-heading">
+              <div>
+                <h2>Active base resumes</h2>
+                <p>Available for new applications and tailoring.</p>
+              </div>
+              <span>2 active</span>
+            </div>
+            <div class="resume-grid">
+              <div class="resume-card muted-card"></div>
+              <div class="resume-card muted-card"></div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="dialog-overlay" role="presentation">
+      <section
+        class="retirement-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="retirement-dialog-heading"
+        aria-describedby="retirement-dialog-description"
+      >
+        <span class="dialog-icon" aria-hidden="true"
+          ><svg><use href="#icon-document" /></svg
+        ></span>
+        <p class="eyebrow">Base resumes</p>
+        <h2 id="retirement-dialog-heading">Retire this base resume?</h2>
+        <p id="retirement-dialog-description">
+          <strong>Frontend Engineering.pdf</strong> will no longer be available
+          for new applications or tailoring. Slot 1 will become available.
+        </p>
+        <div class="preservation-callout">
+          <svg><use href="#icon-lock" /></svg>
+          <span>
+            <strong>The original PDF stays preserved.</strong>
+            Historical application references will remain unchanged.
+          </span>
+        </div>
+        <div class="dialog-actions">
+          <label class="button button--secondary" for="state-two">Cancel</label>
+          <button class="button button--danger" type="button">
+            Retire resume
+          </button>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

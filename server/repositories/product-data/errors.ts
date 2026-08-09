@@ -1,5 +1,6 @@
 export type ProductDataRepositoryOperation =
   | 'read-active-base-resumes'
+  | 'read-active-base-resumes-management'
   | 'read-application-summary'
   | 'read-ready-for-review'
   | 'read-recent-applications'
