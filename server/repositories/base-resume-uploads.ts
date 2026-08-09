@@ -8,7 +8,7 @@ import {
 import {
   BASE_RESUME_CONTENT_TYPE,
   MAXIMUM_BASE_RESUME_SIZE_BYTES,
-} from '../domain/base-resumes/upload'
+} from '../../shared/base-resumes/constraints'
 import type { Database } from '../infrastructure/supabase/database.generated'
 import type { ProductDataRepositoryContext } from './product-data/context'
 

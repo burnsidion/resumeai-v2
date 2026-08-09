@@ -3,10 +3,8 @@ import { Readable } from 'node:stream'
 import type { H3Event } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import {
-  BaseResumeUploadDomainError,
-  MAXIMUM_BASE_RESUME_SIZE_BYTES,
-} from '../../server/domain/base-resumes/upload'
+import { MAXIMUM_BASE_RESUME_SIZE_BYTES } from '../../shared/base-resumes/constraints'
+import { BaseResumeUploadDomainError } from '../../server/domain/base-resumes/upload'
 import baseResumeUploadEndpoint, {
   BASE_RESUME_MULTIPART_OVERHEAD_BYTES,
   MAXIMUM_BASE_RESUME_REQUEST_SIZE_BYTES,

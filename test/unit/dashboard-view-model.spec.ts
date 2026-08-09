@@ -88,14 +88,20 @@ describe('dashboard presentation mapper', () => {
       remainingSlotsLabel: '1 resume slot available',
     })
     expect(viewModel.baseResumes.items[0]).toEqual({
+      activeSlot: 1,
       addedLabel: 'Added Jul 20',
       createdAt: '2026-07-20T18:00:00+00:00',
       filename: 'Frontend Engineering.pdf',
       id: '465e390d-f7cd-4f11-ac19-80a6cf9760fb',
       statusLabel: 'Active',
     })
-    expect(viewModel.baseResumes.items[0]).not.toHaveProperty('activeSlot')
     expect(viewModel.baseResumes.items[0]).not.toHaveProperty('primary')
+    expect(viewModel.quickActions).toContainEqual(
+      expect.objectContaining({
+        availability: 'available',
+        id: 'upload-base-resume',
+      }),
+    )
     expect(viewModel).not.toHaveProperty('followUp')
   })
 
@@ -126,7 +132,8 @@ describe('dashboard presentation mapper', () => {
     })
     expect(viewModel.attention).toEqual({
       action: {
-        availability: 'unavailable',
+        availability: 'available',
+        id: 'upload-base-resume',
         label: 'Upload base resume',
       },
       description:
@@ -168,6 +175,7 @@ describe('dashboard presentation mapper', () => {
     expect(viewModel.attention).toMatchObject({
       action: {
         availability: 'unavailable',
+        id: 'create-application',
         label: 'Create application',
       },
       kind: 'guidance',
@@ -325,5 +333,12 @@ describe('dashboard presentation mapper', () => {
       remainingSlots: 0,
       remainingSlotsLabel: null,
     })
+    expect(viewModel.quickActions).toContainEqual(
+      expect.objectContaining({
+        availability: 'unavailable',
+        description: 'All three resume slots are in use',
+        id: 'upload-base-resume',
+      }),
+    )
   })
 })

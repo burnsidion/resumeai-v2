@@ -5,9 +5,9 @@ import type {
   UploadBaseResumeResponse,
 } from '../../../shared/base-resumes/upload'
 import { uploadBaseResumeResponseSchema } from '../../../shared/base-resumes/upload'
+import { MAXIMUM_BASE_RESUME_SIZE_BYTES } from '../../../shared/base-resumes/constraints'
 import {
   BaseResumeUploadDomainError,
-  MAXIMUM_BASE_RESUME_SIZE_BYTES,
   type BaseResumeUploadCandidate,
 } from '../../domain/base-resumes/upload'
 import {

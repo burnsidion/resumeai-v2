@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import {
   BASE_RESUME_CONTENT_TYPE,
+  MAXIMUM_BASE_RESUME_SIZE_BYTES,
+} from '../../shared/base-resumes/constraints'
+import {
   BaseResumeUploadDomainError,
   calculateBaseResumeSha256,
   createBaseResumeObjectKey,
   findLowestAvailableBaseResumeSlot,
-  MAXIMUM_BASE_RESUME_SIZE_BYTES,
   validateBaseResumeUpload,
 } from '../../server/domain/base-resumes/upload'
 import { MAXIMUM_BASE_RESUME_FILENAME_LENGTH } from '../../shared/base-resumes/upload'

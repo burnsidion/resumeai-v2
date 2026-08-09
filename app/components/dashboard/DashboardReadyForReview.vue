@@ -12,6 +12,19 @@ const readyForReview = computed(() =>
 const guidance = computed(() =>
   props.item.kind === 'guidance' ? props.item : null,
 )
+
+const emit = defineEmits<{
+  'upload-requested': []
+}>()
+
+const requestGuidanceAction = (): void => {
+  if (
+    guidance.value?.action?.availability === 'available' &&
+    guidance.value.action.id === 'upload-base-resume'
+  ) {
+    emit('upload-requested')
+  }
+}
 </script>
 
 <template>
@@ -105,9 +118,14 @@ const guidance = computed(() =>
     <div v-else-if="guidance?.action" class="mt-7">
       <button
         type="button"
-        disabled
-        class="bg-accent text-canvas min-h-11 cursor-not-allowed rounded-xl px-5 text-sm font-semibold opacity-60"
-        title="This workflow is not available yet"
+        :disabled="guidance.action.availability !== 'available'"
+        class="bg-accent text-canvas min-h-11 rounded-xl px-5 text-sm font-semibold transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300 enabled:hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        :title="
+          guidance.action.availability === 'unavailable'
+            ? 'This workflow is not available yet'
+            : undefined
+        "
+        @click="requestGuidanceAction"
       >
         {{ guidance.action.label }}
       </button>

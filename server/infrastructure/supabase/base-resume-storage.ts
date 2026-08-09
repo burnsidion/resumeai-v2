@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { BASE_RESUME_CONTENT_TYPE } from '../../domain/base-resumes/upload'
+import { BASE_RESUME_CONTENT_TYPE } from '../../../shared/base-resumes/constraints'
 import type { Database } from './database.generated'
 
 export const BASE_RESUME_BUCKET_NAME = 'base-resumes'
