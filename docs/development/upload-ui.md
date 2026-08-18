@@ -2,7 +2,8 @@
 
 OWL-24 established the visual and interaction foundation for selecting a base
 resume. OWL-27 connects that source-owned picker to the trusted OWL-26 upload
-endpoint through the authenticated dashboard.
+endpoint through the authenticated dashboard, and OWL-31 reuses the same
+workflow on the Base Resumes management page.
 
 ## Decision
 
@@ -40,26 +41,36 @@ The implemented OWL-27 workflow owns:
 
 ## Authenticated placement
 
-The dashboard remains the only base-resume upload surface for the MVP. It owns
-one upload dialog and opens that dialog from three truthful entry points when
-capacity remains:
+The dashboard and `/base-resumes` management page are the approved upload
+surfaces for the MVP. Each surface owns one instance of the same upload dialog
+and refreshes its own trusted read after a confirmed upload.
+
+The dashboard opens its dialog from three truthful entry points when capacity
+remains:
 
 - the zero-resume guidance card;
 - the upload quick action;
 - the available-slot row in the base-resume card.
 
-No dedicated base-resume route or sidebar destination is introduced. At three
-active resumes, the available-slot row is absent and the quick action is
-disabled with visible full-capacity copy. The server remains authoritative if
-dashboard data becomes stale between rendering and submission.
+The Base Resumes page opens its dialog from:
+
+- the page-level upload action;
+- the zero-resume guidance action; and
+- the available-slot card.
+
+At three active resumes, neither surface exposes an unnecessary upload entry
+point. The dashboard quick action remains disabled with visible full-capacity
+copy, while the management page shows its full-capacity state without an upload
+action. The server remains authoritative if either read becomes stale between
+rendering and submission.
 
 ## Runtime ownership
 
 The browser dependency direction is:
 
 ```text
-dashboard page
-  -> dashboard presentation components
+dashboard or Base Resumes page
+  -> page presentation components
   -> upload dialog
   -> upload state composable
   -> authenticated Nuxt upload endpoint
@@ -67,8 +78,8 @@ dashboard page
 
 Responsibilities remain separated:
 
-- the dashboard page owns dialog visibility and refreshes the existing
-  authenticated dashboard request after confirmed success;
+- each page owns its dialog visibility and refreshes its existing authenticated
+  read after confirmed success;
 - dashboard cards own only their presentation and emit an upload intent;
 - `BaseResumeUploadDialog.vue` owns modal focus, product instructions, capacity
   presentation, and state-specific controls;
@@ -94,11 +105,12 @@ byte progress.
 Client validation prevents known-invalid selections from reaching the server,
 but it is only an early usability boundary. The server repeats authoritative
 validation. A confirmed retry-safe failure permits one explicit retry. An
-ambiguous result requires dashboard reconciliation before another upload so the
-client cannot blindly create duplicate rows or objects.
+ambiguous result requires reconciliation through the owning page's trusted read
+before another upload so the client cannot blindly create duplicate rows or
+objects.
 
-After success, the dashboard request is refreshed while the dialog continues to
-show the confirmed result. The persisted resume card includes its normalized
+After success, the owning page request is refreshed while the dialog continues
+to show the confirmed result. The persisted resume card includes its normalized
 filename, upload date, active state, and deterministic slot, and remains after a
 page reload.
 
@@ -120,16 +132,17 @@ Coverage is deliberately layered:
 - Nuxt component tests verify browse/drop interaction, dialog states,
   focus-management, dashboard entry points, refresh behavior, and full
   capacity;
-- isolated Playwright tests verify the authenticated dashboard journey against
-  local Supabase, including invalid selection, persisted upload, immediate
-  reconciliation, three-resume capacity, and survival after reload;
+- isolated Playwright tests verify the authenticated dashboard and Base Resumes
+  journeys against local Supabase, including navigation, zero state, shared
+  dialog reuse, invalid selection, persisted upload, immediate reconciliation,
+  survival after reload, three-resume capacity, and mobile drawer behavior;
 - database and integration tests continue to verify RLS, exact row/object
   persistence, immutability, deterministic slots, and compensating cleanup.
 
 The input `accept` attribute is a browser hint, not a security boundary. OWL-25
 adds private owner-scoped Storage plus bucket-level content-type and size
-restrictions. The later server workflow must still inspect the PDF bytes,
-enforce product limits, and coordinate object storage with persistence. See
+restrictions. The OWL-26 server workflow also inspects the PDF bytes, enforces
+product limits, and coordinates object storage with persistence. See
 [Base resume storage](base-resume-storage.md).
 
 ## Dependency decision

@@ -25,15 +25,15 @@ const signOut = () =>
 
 <template>
   <div
-    class="bg-canvas text-foreground min-h-dvh xl:grid xl:grid-cols-[13.5rem_minmax(0,1fr)]"
+    class="bg-canvas text-foreground min-h-dvh md:grid md:grid-cols-[4.5rem_minmax(0,1fr)] xl:grid-cols-[13.5rem_minmax(0,1fr)]"
   >
-    <ShellSidebar
+    <ShellNavigation
       v-if="authenticatedUser"
       :email="authenticatedUser.email"
       :sign-out="signOut"
     />
 
-    <div class="min-w-0">
+    <div class="min-w-0 pt-16 md:pt-0">
       <slot />
     </div>
   </div>
