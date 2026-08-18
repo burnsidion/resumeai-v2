@@ -87,6 +87,17 @@ Zero, partial, and full-capacity collections are successful states. The endpoint
 uses stable error codes for unauthenticated requests, temporary authentication
 failure, and unavailable Base Resumes data. Provider messages remain server-side.
 
+The `/base-resumes` page consumes this endpoint through `useBaseResumes`. The
+composable makes the relative authenticated request and validates the response
+against the strict shared view-model schema. The route owns loading, recoverable
+error, retry, refresh, and upload-dialog state; presentation components receive
+only the validated view model and emit user intent. No browser-side Supabase
+client is introduced.
+
+After a confirmed upload, the route refreshes `GET /api/base-resumes` so the
+management collection is reconciled through the same trusted read boundary. A
+page reload repeats that read rather than relying on transient upload state.
+
 ## Error boundary
 
 Provider errors and unexpected database values are converted into sanitized
@@ -116,13 +127,14 @@ safe projections, zero and capacity states, deterministic ordering,
 orchestration, trusted authentication handoff, response mapping, and error
 sanitization.
 
-The Playwright integration suite creates two disposable confirmed users against
-the isolated local Supabase stack, inserts data through each authenticated
-client, and invokes the server product-data services. It verifies that each
-owner receives only their data, retired resumes stay outside the active
-management collection, safe projections exclude persistence details, and
-deliberately requesting another user's identifier still returns an empty result
-under RLS.
+The Playwright integration suite creates disposable confirmed users against the
+isolated local Supabase stack. It verifies that each owner receives only their
+data, retired resumes stay outside the active management collection, safe
+projections exclude persistence details, and deliberately requesting another
+user's identifier still returns an empty result under RLS. Browser coverage also
+verifies authenticated navigation to the Base Resumes page, zero state, shared
+upload-dialog behavior, trusted refresh and reload persistence, full-capacity
+presentation, and mobile drawer navigation.
 
 No service-role or secret key is used. The local project is disposable and must
 be stopped without a backup after verification.

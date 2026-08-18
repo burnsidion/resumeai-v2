@@ -257,6 +257,20 @@ const openUploadDialog = async (page: Page): Promise<Locator> => {
   return dialog
 }
 
+const openBaseResumesPageUploadDialog = async (
+  page: Page,
+): Promise<Locator> => {
+  const uploadAction = page.getByRole('button', { name: 'Choose a PDF' })
+
+  await expect(uploadAction).toBeEnabled()
+  await uploadAction.click()
+
+  const dialog = page.getByRole('dialog', { name: 'Upload base resume' })
+
+  await expect(dialog).toBeVisible()
+  return dialog
+}
+
 const selectPdfInDialog = async (
   dialog: Locator,
   input: {
@@ -466,6 +480,79 @@ test('keeps three deterministic rows and objects under concurrent capacity press
   )
 })
 
+test('navigates to Base Resumes, uploads through the shared dialog, and supports mobile navigation', async ({
+  context,
+  page,
+}) => {
+  await createAuthenticatedTestUser(context, page)
+
+  const desktopNavigation = page.getByRole('complementary', {
+    name: 'Authenticated application sidebar',
+  })
+
+  await desktopNavigation.getByRole('link', { name: 'Base resumes' }).click()
+  await expect(page).toHaveURL(/\/base-resumes$/)
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Base resumes' }),
+  ).toBeVisible()
+  await expect(page.getByText('0 of 3 resumes')).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Add your first base resume' }),
+  ).toBeVisible()
+
+  const filename = 'Platform Engineering.pdf'
+  const dialog = await openBaseResumesPageUploadDialog(page)
+
+  await selectPdfInDialog(dialog, {
+    body: createPdfBody('base-resumes-page'),
+    filename,
+  })
+  await dialog.getByRole('button', { name: 'Upload resume' }).click()
+  await expect(dialog.getByText('Upload complete')).toBeVisible()
+  await expect(
+    page.getByRole('main').getByRole('heading', { name: filename }),
+  ).toBeVisible()
+  await dialog.getByRole('button', { name: 'Done' }).click()
+  await expect(dialog).toBeHidden()
+  await expect(page.getByText('1 of 3 resumes')).toBeVisible()
+
+  await page.reload({ waitUntil: 'networkidle' })
+  await expect(page.getByText(filename)).toBeVisible()
+  await expect(page.getByText('1 of 3 resumes')).toBeVisible()
+
+  await page.setViewportSize({ height: 844, width: 390 })
+
+  const mobileMenuButton = page.getByRole('button', {
+    name: 'Open navigation',
+  })
+
+  await mobileMenuButton.click()
+
+  let mobileNavigation = page.getByRole('dialog', { name: 'Navigation' })
+
+  await expect(mobileNavigation).toBeVisible()
+  await expect(
+    mobileNavigation.getByRole('link', { name: 'Base resumes' }),
+  ).toHaveAttribute('aria-current', 'page')
+
+  await page.keyboard.press('Escape')
+  await expect(mobileNavigation).toBeHidden()
+  await expect(mobileMenuButton).toBeFocused()
+
+  await mobileMenuButton.click()
+  mobileNavigation = page.getByRole('dialog', { name: 'Navigation' })
+  await mobileNavigation.getByRole('link', { name: 'Dashboard' }).click()
+  await expect(page).toHaveURL(/\/dashboard$/)
+  await expect(mobileNavigation).toBeHidden()
+
+  await mobileMenuButton.click()
+  mobileNavigation = page.getByRole('dialog', { name: 'Navigation' })
+  await mobileNavigation.getByRole('link', { name: 'Base resumes' }).click()
+  await expect(page).toHaveURL(/\/base-resumes$/)
+  await expect(mobileNavigation).toBeHidden()
+  await expect(page.getByText(filename)).toBeVisible()
+})
+
 test('completes the accessible dashboard upload journey and preserves all three resumes after reload', async ({
   context,
   page,
@@ -570,6 +657,19 @@ test('completes the accessible dashboard upload journey and preserves all three 
       getDashboardSection(page, 'Base resumes').getByText(filename),
     ).toBeVisible()
   }
+
+  await page
+    .getByRole('complementary', {
+      name: 'Authenticated application sidebar',
+    })
+    .getByRole('link', { name: 'Base resumes' })
+    .click()
+  await expect(page).toHaveURL(/\/base-resumes$/)
+  await expect(page.getByText('3 of 3 resumes')).toBeVisible()
+  await expect(page.getByText('All active slots are in use')).toBeVisible()
+  await expect(
+    page.getByRole('main').getByRole('button', { name: /upload/i }),
+  ).toHaveCount(0)
 
   const { count, error } = await owner.client
     .from('base_resumes')
