@@ -126,6 +126,11 @@ historically referenced base-resume objects cannot be deleted through the
 authenticated Storage API. Deleting a database row to bypass this boundary is
 not part of the MVP lifecycle.
 
+Retirement changes only the product row's lifecycle fields. It never modifies
+or removes the tracked Storage object. The trusted mutation boundary and its
+retry behavior are documented in
+[Base resume retirement](base-resume-retirement.md).
+
 Supabase can return an empty successful result when an RLS-protected deletion
 matches no visible object. Application code must not interpret that response as
 proof that a protected object was removed. The OWL-25 integration tests verify
@@ -159,9 +164,11 @@ pnpm exec supabase stop --no-backup
 ```
 
 The integration configuration rejects non-loopback Supabase URLs. Never run the
-disposable Storage or upload tests against the hosted project. The upload suite
-verifies exact row/object persistence, validation no-ops, object immutability,
-deterministic slots, and cleanup under concurrent capacity pressure.
+disposable Storage, upload, or retirement tests against the hosted project. The
+upload suite verifies exact row/object persistence, validation no-ops, object
+immutability, deterministic slots, and cleanup under concurrent capacity
+pressure. The retirement suite verifies that tracked source objects remain
+unchanged after their active slot is released.
 
 ## Hosted synchronization
 
