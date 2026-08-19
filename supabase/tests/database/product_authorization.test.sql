@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(43);
+select plan(46);
 
 insert into auth.users (id, email)
 values
@@ -787,6 +787,40 @@ select results_eq(
   $$,
   $$select 1 where false$$,
   'an owner cannot retire another user''s base resume'
+);
+
+select results_eq(
+  $$
+    update public.base_resumes
+    set retired_at = retired_at + interval '1 second'
+    where id = '10000000-0000-4000-8000-000000000001'
+    returning 1
+  $$,
+  $$select 1 where false$$,
+  'an owner cannot rewrite a retired base resume'
+);
+
+select results_eq(
+  $$
+    update public.base_resumes
+    set active_slot = 3,
+        retired_at = null
+    where id = '10000000-0000-4000-8000-000000000001'
+    returning 1
+  $$,
+  $$select 1 where false$$,
+  'an owner cannot reactivate a retired base resume'
+);
+
+select throws_ok(
+  $$
+    update public.base_resumes
+    set active_slot = 3
+    where id = '10000000-0000-4000-8000-000000000010'
+  $$,
+  '42501',
+  null,
+  'an owner cannot rearrange active base-resume slots through the retirement policy'
 );
 
 select results_eq(

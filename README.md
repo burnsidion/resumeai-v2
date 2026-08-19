@@ -103,6 +103,7 @@ intentionally absent from this foundation.
 - [Dashboard design specification](docs/design/dashboard.md)
 - [Database development](docs/development/database.md)
 - [Base resume storage](docs/development/base-resume-storage.md)
+- [Base resume retirement](docs/development/base-resume-retirement.md)
 - [Product data access](docs/development/product-data.md)
 - [Supabase Auth setup](docs/development/supabase-auth.md)
 - [Upload UI foundation](docs/development/upload-ui.md)
