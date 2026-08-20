@@ -1,15 +1,27 @@
 <script setup lang="ts">
 import BaseResumeCard from '~/components/base-resumes/BaseResumeCard.vue'
 import { MAXIMUM_BASE_RESUME_SIZE_MEBIBYTES } from '~~/shared/base-resumes/constraints'
-import type { BaseResumesManagementViewModel } from '~~/shared/base-resumes/view-model'
+import type {
+  BaseResumeManagementItemViewModel,
+  BaseResumesManagementViewModel,
+} from '~~/shared/base-resumes/view-model'
 
 defineProps<{
   resumes: BaseResumesManagementViewModel
 }>()
 
+const pageHeading = useTemplateRef<HTMLHeadingElement>('pageHeading')
+
 const emit = defineEmits<{
+  'retirement-requested': [resume: BaseResumeManagementItemViewModel]
   'upload-requested': []
 }>()
+
+const focusHeading = (): void => {
+  pageHeading.value?.focus()
+}
+
+defineExpose({ focusHeading })
 </script>
 
 <template>
@@ -25,7 +37,9 @@ const emit = defineEmits<{
         </p>
         <h1
           id="base-resumes-page-heading"
-          class="mt-3 text-4xl font-semibold tracking-[-0.045em] sm:text-5xl"
+          ref="pageHeading"
+          class="focus-visible:outline-focus mt-3 rounded-lg text-4xl font-semibold tracking-[-0.045em] sm:text-5xl"
+          tabindex="-1"
         >
           Base resumes
         </h1>
@@ -141,7 +155,11 @@ const emit = defineEmits<{
             Active base resumes
           </h2>
           <p class="text-muted mt-1 text-xs sm:text-sm">
-            Available for new applications and tailoring.
+            {{
+              resumes.remainingSlots === 0
+                ? 'Retire a resume to make another active slot available.'
+                : 'Available for new applications and tailoring.'
+            }}
           </p>
         </div>
         <span class="text-muted shrink-0 text-xs">
@@ -151,7 +169,10 @@ const emit = defineEmits<{
 
       <ul class="mt-4 grid list-none gap-5 p-0 lg:grid-cols-2 2xl:grid-cols-3">
         <li v-for="resume in resumes.items" :key="resume.id" class="min-w-0">
-          <BaseResumeCard :resume="resume" />
+          <BaseResumeCard
+            :resume="resume"
+            @retirement-requested="emit('retirement-requested', resume)"
+          />
         </li>
 
         <li v-if="resumes.remainingSlots > 0" class="min-w-0">

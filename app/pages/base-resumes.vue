@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import BaseResumeRetirementDialog from '~/components/base-resumes/BaseResumeRetirementDialog.vue'
 import BaseResumeUploadDialog from '~/components/base-resumes/BaseResumeUploadDialog.vue'
+import type { RetiredBaseResume } from '~~/shared/base-resumes/retirement'
+import type { BaseResumeManagementItemViewModel } from '~~/shared/base-resumes/view-model'
+
+interface BaseResumesPageContentInstance {
+  focusHeading(): void
+}
 
 definePageMeta({
   layout: 'authenticated',
@@ -11,10 +18,15 @@ useHead({
 })
 
 const { data: baseResumes, refresh, status } = useBaseResumes()
+const pageContent =
+  useTemplateRef<BaseResumesPageContentInstance>('pageContent')
 const uploadDialogOpen = ref(false)
+const selectedRetirementResume =
+  shallowRef<BaseResumeManagementItemViewModel | null>(null)
 
 const openBaseResumeUpload = (): void => {
   if ((baseResumes.value?.remainingSlots ?? 0) > 0) {
+    selectedRetirementResume.value = null
     uploadDialogOpen.value = true
   }
 }
@@ -23,8 +35,56 @@ const closeBaseResumeUpload = (): void => {
   uploadDialogOpen.value = false
 }
 
+const openBaseResumeRetirement = (
+  resume: BaseResumeManagementItemViewModel,
+): void => {
+  uploadDialogOpen.value = false
+  selectedRetirementResume.value = resume
+}
+
+const closeBaseResumeRetirement = (): void => {
+  selectedRetirementResume.value = null
+}
+
+const closeRetirementAfterRefresh = async (
+  retiredResumeId: string,
+): Promise<void> => {
+  const resumeStillActive = baseResumes.value?.items.some(
+    (resume) => resume.id === retiredResumeId,
+  )
+
+  closeBaseResumeRetirement()
+
+  if (!resumeStillActive) {
+    await nextTick()
+    pageContent.value?.focusHeading()
+  }
+}
+
 const handleBaseResumeUploaded = async (): Promise<void> => {
   await refresh()
+}
+
+const refreshRetirementState = async (): Promise<boolean> => {
+  try {
+    await refresh()
+  } catch {
+    return false
+  }
+
+  return status.value !== 'error'
+}
+
+const handleBaseResumeRetired = async (
+  retiredResume: RetiredBaseResume,
+): Promise<void> => {
+  if (selectedRetirementResume.value?.id !== retiredResume.id) {
+    return
+  }
+
+  if (await refreshRetirementState()) {
+    await closeRetirementAfterRefresh(retiredResume.id)
+  }
 }
 
 const retryBaseResumes = async (): Promise<void> => {
@@ -46,13 +106,35 @@ const handleUploadRecovery = async (
     closeBaseResumeUpload()
   }
 }
+
+const handleRetirementRecovery = async (
+  recovery: 'refresh' | 'sign-in',
+): Promise<void> => {
+  if (recovery === 'sign-in') {
+    closeBaseResumeRetirement()
+    await navigateTo('/sign-in')
+    return
+  }
+
+  const selectedResumeId = selectedRetirementResume.value?.id
+
+  if (await refreshRetirementState()) {
+    if (selectedResumeId) {
+      await closeRetirementAfterRefresh(selectedResumeId)
+    } else {
+      closeBaseResumeRetirement()
+    }
+  }
+}
 </script>
 
 <template>
   <main class="min-h-dvh px-5 py-8 sm:px-8 xl:px-12 xl:py-10">
     <template v-if="baseResumes">
       <BaseResumesPageContent
+        ref="pageContent"
         :resumes="baseResumes"
+        @retirement-requested="openBaseResumeRetirement"
         @upload-requested="openBaseResumeUpload"
       />
 
@@ -63,6 +145,15 @@ const handleUploadRecovery = async (
         @close="closeBaseResumeUpload"
         @recovery-requested="handleUploadRecovery"
         @uploaded="handleBaseResumeUploaded"
+      />
+
+      <BaseResumeRetirementDialog
+        v-if="selectedRetirementResume"
+        :open="true"
+        :resume="selectedRetirementResume"
+        @close="closeBaseResumeRetirement"
+        @recovery-requested="handleRetirementRecovery"
+        @retired="handleBaseResumeRetired"
       />
     </template>
 
