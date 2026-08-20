@@ -4,6 +4,10 @@ import type { BaseResumeManagementItemViewModel } from '~~/shared/base-resumes/v
 defineProps<{
   resume: BaseResumeManagementItemViewModel
 }>()
+
+const emit = defineEmits<{
+  'retirement-requested': []
+}>()
 </script>
 
 <template>
@@ -79,5 +83,14 @@ defineProps<{
         ResumAI never edits this source file.
       </span>
     </div>
+
+    <button
+      type="button"
+      class="text-muted hover:text-danger focus-visible:outline-focus mt-2 min-h-11 self-start rounded-lg px-1 text-xs font-semibold transition-colors"
+      :aria-label="`Retire ${resume.filename}`"
+      @click="emit('retirement-requested')"
+    >
+      Retire resume
+    </button>
   </article>
 </template>
