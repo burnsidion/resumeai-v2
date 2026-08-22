@@ -98,6 +98,13 @@ After a confirmed upload, the route refreshes `GET /api/base-resumes` so the
 management collection is reconciled through the same trusted read boundary. A
 page reload repeats that read rather than relying on transient upload state.
 
+After confirmed retirement, the route refreshes that same read before treating
+the management collection as reconciled. The confirmation dialog closes only
+after the retired card is absent, and the page moves focus to its stable heading
+because the card action that opened the dialog has been removed. Retry and
+recovery state remains owned by the mutation composable and page; the product
+read stays read-only.
+
 ## Error boundary
 
 Provider errors and unexpected database values are converted into sanitized
@@ -134,7 +141,10 @@ projections exclude persistence details, and deliberately requesting another
 user's identifier still returns an empty result under RLS. Browser coverage also
 verifies authenticated navigation to the Base Resumes page, zero state, shared
 upload-dialog behavior, trusted refresh and reload persistence, full-capacity
-presentation, and mobile drawer navigation.
+presentation, retry-safe retirement, deterministic replacement-slot reuse, and
+the final persisted collection. Responsive checks cover the expanded desktop
+shell, collapsed tablet shell, and mobile drawer without introducing a separate
+product-data path.
 
 No service-role or secret key is used. The local project is disposable and must
 be stopped without a backup after verification.

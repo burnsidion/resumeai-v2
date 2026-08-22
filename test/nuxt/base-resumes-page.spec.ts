@@ -220,6 +220,25 @@ describe('Base Resumes page', () => {
     expect(wrapper.find('[role="dialog"]').exists()).toBe(true)
   })
 
+  it('owns the stable heading fallback when an upload opener disappears', async () => {
+    const wrapper = await mountSuspended(BaseResumesPage, {
+      attachTo: document.body,
+    })
+    const uploadButton = wrapper
+      .findAll('button')
+      .find((button) => button.text().trim() === 'Upload base resume')
+
+    await uploadButton?.trigger('click')
+    wrapper
+      .getComponent(BaseResumeUploadDialog)
+      .vm.$emit('focus-fallback-requested')
+    await flushPromises()
+
+    expect(document.activeElement).toBe(wrapper.get('h1').element)
+
+    wrapper.unmount()
+  })
+
   it('opens confirmation for the selected resume without retiring immediately', async () => {
     const wrapper = await mountSuspended(BaseResumesPage)
     const retireButtons = wrapper

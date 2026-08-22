@@ -277,8 +277,26 @@ describe('base resume upload dialog', () => {
     expect(document.activeElement).toBe(opener)
     expect(document.body.style.overflow).toBe('')
     expect(reset).toHaveBeenCalledOnce()
+    expect(wrapper.emitted('focus-fallback-requested')).toBeUndefined()
 
     opener.remove()
+  })
+
+  it('requests an owning-surface fallback when its opener no longer exists', async () => {
+    const opener = document.createElement('button')
+    opener.textContent = 'Open transient upload action'
+    document.body.append(opener)
+    opener.focus()
+
+    const wrapper = await mountDialog({ open: false })
+    await wrapper.setProps({ open: true })
+    await nextTick()
+
+    opener.remove()
+    await wrapper.setProps({ open: false })
+    await nextTick()
+
+    expect(wrapper.emitted('focus-fallback-requested')).toHaveLength(1)
   })
 
   it('cannot be dismissed or submitted again while an upload is unresolved', async () => {

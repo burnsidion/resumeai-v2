@@ -3,7 +3,8 @@
 OWL-24 established the visual and interaction foundation for selecting a base
 resume. OWL-27 connects that source-owned picker to the trusted OWL-26 upload
 endpoint through the authenticated dashboard, and OWL-31 reuses the same
-workflow on the Base Resumes management page.
+workflow on the Base Resumes management page. OWL-34 validates that workflow as
+part of the complete upload, retirement, and replacement management loop.
 
 ## Decision
 
@@ -82,7 +83,10 @@ Responsibilities remain separated:
   read after confirmed success;
 - dashboard cards own only their presentation and emit an upload intent;
 - `BaseResumeUploadDialog.vue` owns modal focus, product instructions, capacity
-  presentation, and state-specific controls;
+  presentation, state-specific controls, and restoration to its opener when
+  that element remains available;
+- the owning page selects a stable focus fallback when a trusted refresh removes
+  the transient opener from the document;
 - `BaseResumeFilePicker.vue` owns native browse and drag-and-drop interaction;
 - `useBaseResumeUpload.ts` owns client upload state, one in-flight request, safe
   retry decisions, and sanitized error mapping;
@@ -112,7 +116,8 @@ objects.
 After success, the owning page request is refreshed while the dialog continues
 to show the confirmed result. The persisted resume card includes its normalized
 filename, upload date, active state, and deterministic slot, and remains after a
-page reload.
+page reload. The same trusted collection refresh reconciles retirement before a
+replacement upload can reuse the released slot.
 
 ## Accessibility and motion
 
@@ -121,7 +126,9 @@ browse button, focus trapping and restoration, Escape dismissal outside the
 uploading state, live status announcements, alert semantics, disabled states,
 and globally defined focus-visible styling. The existing global reduced-motion
 media query minimizes transitions and spinner animation without hiding product
-state.
+state. When a successful mutation removes the control that opened a dialog, the
+owning page moves focus to its stable page heading instead of leaving focus on a
+detached element.
 
 ## Verification
 
@@ -132,10 +139,14 @@ Coverage is deliberately layered:
 - Nuxt component tests verify browse/drop interaction, dialog states,
   focus-management, dashboard entry points, refresh behavior, and full
   capacity;
-- isolated Playwright tests verify the authenticated dashboard and Base Resumes
-  journeys against local Supabase, including navigation, zero state, shared
-  dialog reuse, invalid selection, persisted upload, immediate reconciliation,
-  survival after reload, three-resume capacity, and mobile drawer behavior;
+- isolated Playwright tests verify the authenticated dashboard and complete Base
+  Resumes management journey against local Supabase, including zero state,
+  invalid selection without a network request, persisted uploads, reload
+  survival, three-resume capacity, retry-safe retirement recovery, deterministic
+  replacement-slot reuse, and final reload persistence;
+- browser coverage exercises the expanded desktop shell, collapsed tablet shell,
+  and mobile drawer, and checks page containment, dialog containment, keyboard
+  focus, reduced-motion behavior, and minimum interactive target sizing;
 - database and integration tests continue to verify RLS, exact row/object
   persistence, immutability, deterministic slots, and compensating cleanup.
 

@@ -35,6 +35,10 @@ const closeBaseResumeUpload = (): void => {
   uploadDialogOpen.value = false
 }
 
+const focusBaseResumesHeading = (): void => {
+  pageContent.value?.focusHeading()
+}
+
 const openBaseResumeRetirement = (
   resume: BaseResumeManagementItemViewModel,
 ): void => {
@@ -143,6 +147,7 @@ const handleRetirementRecovery = async (
         :active-limit="baseResumes.activeLimit"
         :open="uploadDialogOpen"
         @close="closeBaseResumeUpload"
+        @focus-fallback-requested="focusBaseResumesHeading"
         @recovery-requested="handleUploadRecovery"
         @uploaded="handleBaseResumeUploaded"
       />
