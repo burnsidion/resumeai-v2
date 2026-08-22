@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BaseResumePreviewDialog from '~/components/base-resumes/BaseResumePreviewDialog.vue'
 import BaseResumeRetirementDialog from '~/components/base-resumes/BaseResumeRetirementDialog.vue'
 import BaseResumeUploadDialog from '~/components/base-resumes/BaseResumeUploadDialog.vue'
 import type { RetiredBaseResume } from '~~/shared/base-resumes/retirement'
@@ -21,11 +22,14 @@ const { data: baseResumes, refresh, status } = useBaseResumes()
 const pageContent =
   useTemplateRef<BaseResumesPageContentInstance>('pageContent')
 const uploadDialogOpen = ref(false)
+const selectedPreviewResume =
+  shallowRef<BaseResumeManagementItemViewModel | null>(null)
 const selectedRetirementResume =
   shallowRef<BaseResumeManagementItemViewModel | null>(null)
 
 const openBaseResumeUpload = (): void => {
   if ((baseResumes.value?.remainingSlots ?? 0) > 0) {
+    selectedPreviewResume.value = null
     selectedRetirementResume.value = null
     uploadDialogOpen.value = true
   }
@@ -39,10 +43,23 @@ const focusBaseResumesHeading = (): void => {
   pageContent.value?.focusHeading()
 }
 
+const openBaseResumePreview = (
+  resume: BaseResumeManagementItemViewModel,
+): void => {
+  uploadDialogOpen.value = false
+  selectedRetirementResume.value = null
+  selectedPreviewResume.value = resume
+}
+
+const closeBaseResumePreview = (): void => {
+  selectedPreviewResume.value = null
+}
+
 const openBaseResumeRetirement = (
   resume: BaseResumeManagementItemViewModel,
 ): void => {
   uploadDialogOpen.value = false
+  selectedPreviewResume.value = null
   selectedRetirementResume.value = resume
 }
 
@@ -69,7 +86,7 @@ const handleBaseResumeUploaded = async (): Promise<void> => {
   await refresh()
 }
 
-const refreshRetirementState = async (): Promise<boolean> => {
+const refreshBaseResumesState = async (): Promise<boolean> => {
   try {
     await refresh()
   } catch {
@@ -86,7 +103,7 @@ const handleBaseResumeRetired = async (
     return
   }
 
-  if (await refreshRetirementState()) {
+  if (await refreshBaseResumesState()) {
     await closeRetirementAfterRefresh(retiredResume.id)
   }
 }
@@ -122,12 +139,26 @@ const handleRetirementRecovery = async (
 
   const selectedResumeId = selectedRetirementResume.value?.id
 
-  if (await refreshRetirementState()) {
+  if (await refreshBaseResumesState()) {
     if (selectedResumeId) {
       await closeRetirementAfterRefresh(selectedResumeId)
     } else {
       closeBaseResumeRetirement()
     }
+  }
+}
+
+const handlePreviewRecovery = async (
+  recovery: 'refresh' | 'sign-in',
+): Promise<void> => {
+  if (recovery === 'sign-in') {
+    closeBaseResumePreview()
+    await navigateTo('/sign-in')
+    return
+  }
+
+  if (await refreshBaseResumesState()) {
+    closeBaseResumePreview()
   }
 }
 </script>
@@ -138,6 +169,7 @@ const handleRetirementRecovery = async (
       <BaseResumesPageContent
         ref="pageContent"
         :resumes="baseResumes"
+        @preview-requested="openBaseResumePreview"
         @retirement-requested="openBaseResumeRetirement"
         @upload-requested="openBaseResumeUpload"
       />
@@ -150,6 +182,15 @@ const handleRetirementRecovery = async (
         @focus-fallback-requested="focusBaseResumesHeading"
         @recovery-requested="handleUploadRecovery"
         @uploaded="handleBaseResumeUploaded"
+      />
+
+      <BaseResumePreviewDialog
+        v-if="selectedPreviewResume"
+        :open="true"
+        :resume="selectedPreviewResume"
+        @close="closeBaseResumePreview"
+        @focus-fallback-requested="focusBaseResumesHeading"
+        @recovery-requested="handlePreviewRecovery"
       />
 
       <BaseResumeRetirementDialog

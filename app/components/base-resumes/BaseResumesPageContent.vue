@@ -13,6 +13,7 @@ defineProps<{
 const pageHeading = useTemplateRef<HTMLHeadingElement>('pageHeading')
 
 const emit = defineEmits<{
+  'preview-requested': [resume: BaseResumeManagementItemViewModel]
   'retirement-requested': [resume: BaseResumeManagementItemViewModel]
   'upload-requested': []
 }>()
@@ -171,6 +172,7 @@ defineExpose({ focusHeading })
         <li v-for="resume in resumes.items" :key="resume.id" class="min-w-0">
           <BaseResumeCard
             :resume="resume"
+            @preview-requested="emit('preview-requested', resume)"
             @retirement-requested="emit('retirement-requested', resume)"
           />
         </li>
