@@ -659,4 +659,38 @@ test('keeps the management surface usable across authenticated shell breakpoints
     .click()
   await expect(uploadDialog).toBeHidden()
   await expect(mobileUploadAction).toBeFocused()
+
+  const mobilePreviewAction = page.getByRole('button', {
+    name: `Preview ${filename}`,
+  })
+
+  await expectMinimumTouchTarget(mobilePreviewAction)
+  await mobilePreviewAction.click()
+
+  const mobilePreviewDialog = page.getByRole('dialog', { name: filename })
+  const mobilePreviewBounds = await mobilePreviewDialog.boundingBox()
+
+  expect(mobilePreviewBounds).not.toBeNull()
+  expect(mobilePreviewBounds?.x).toBe(0)
+  expect(mobilePreviewBounds?.y).toBe(0)
+  expect(mobilePreviewBounds?.width).toBe(390)
+  expect(mobilePreviewBounds?.height).toBe(844)
+  await expect(
+    mobilePreviewDialog.locator(`iframe[title="Preview of ${filename}"]`),
+  ).toBeVisible()
+  await expect(
+    mobilePreviewDialog.getByRole('link', { name: 'Open' }),
+  ).toBeVisible()
+  await expectMinimumTouchTarget(
+    mobilePreviewDialog.getByRole('button', {
+      name: 'Close document preview',
+    }),
+  )
+  await expectNoHorizontalOverflow(page)
+
+  await mobilePreviewDialog
+    .getByRole('button', { name: 'Close document preview' })
+    .click()
+  await expect(mobilePreviewDialog).toBeHidden()
+  await expect(mobilePreviewAction).toBeFocused()
 })

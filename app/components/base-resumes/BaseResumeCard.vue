@@ -6,6 +6,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
+  'preview-requested': []
   'retirement-requested': []
 }>()
 </script>
@@ -84,13 +85,37 @@ const emit = defineEmits<{
       </span>
     </div>
 
-    <button
-      type="button"
-      class="text-muted hover:text-danger focus-visible:outline-focus mt-2 min-h-11 self-start rounded-lg px-1 text-xs font-semibold transition-colors"
-      :aria-label="`Retire ${resume.filename}`"
-      @click="emit('retirement-requested')"
-    >
-      Retire resume
-    </button>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        class="border-line bg-raised text-foreground hover:border-accent/50 hover:bg-high focus-visible:outline-focus inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors"
+        :aria-label="`Preview ${resume.filename}`"
+        @click="emit('preview-requested')"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="text-accent size-4"
+          aria-hidden="true"
+        >
+          <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" />
+          <circle cx="12" cy="12" r="2.5" />
+        </svg>
+        Preview PDF
+      </button>
+
+      <button
+        type="button"
+        class="text-muted hover:text-danger focus-visible:outline-focus min-h-11 rounded-lg px-2 text-xs font-semibold transition-colors"
+        :aria-label="`Retire ${resume.filename}`"
+        @click="emit('retirement-requested')"
+      >
+        Retire resume
+      </button>
+    </div>
   </article>
 </template>

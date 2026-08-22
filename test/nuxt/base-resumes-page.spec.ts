@@ -1,23 +1,32 @@
 import { mockNuxtImport, mountSuspended } from '@nuxt/test-utils/runtime'
 import { flushPromises } from '@vue/test-utils'
-import { ref, type Ref } from 'vue'
+import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import BaseResumePreviewDialog from '~/components/base-resumes/BaseResumePreviewDialog.vue'
 import BaseResumeRetirementDialog from '~/components/base-resumes/BaseResumeRetirementDialog.vue'
 import BaseResumeUploadDialog from '~/components/base-resumes/BaseResumeUploadDialog.vue'
+import type { BaseResumePreviewState } from '~/composables/useBaseResumePreview'
 import BaseResumesPage from '~/pages/base-resumes.vue'
 import {
   baseResumesManagementViewModelSchema,
   type BaseResumesManagementViewModel,
 } from '../../shared/base-resumes/view-model'
 
-const { navigateToMock, refreshMock, useBaseResumesMock } = vi.hoisted(() => ({
+const {
+  navigateToMock,
+  refreshMock,
+  useBaseResumePreviewMock,
+  useBaseResumesMock,
+} = vi.hoisted(() => ({
   navigateToMock: vi.fn(),
   refreshMock: vi.fn(),
+  useBaseResumePreviewMock: vi.fn(),
   useBaseResumesMock: vi.fn(),
 }))
 
 mockNuxtImport('useBaseResumes', () => useBaseResumesMock)
+mockNuxtImport('useBaseResumePreview', () => useBaseResumePreviewMock)
 mockNuxtImport('navigateTo', () => navigateToMock)
 
 const managementItems = [
@@ -70,6 +79,10 @@ const partialBaseResumes: BaseResumesManagementViewModel =
 
 let baseResumesData: Ref<BaseResumesManagementViewModel | null>
 let baseResumesStatus: Ref<'error' | 'pending' | 'success'>
+let previewState: ShallowRef<BaseResumePreviewState>
+let previewLoadMock: ReturnType<typeof vi.fn>
+let previewResetMock: ReturnType<typeof vi.fn>
+let previewRetryMock: ReturnType<typeof vi.fn>
 
 const setBaseResumesState = (
   data: BaseResumesManagementViewModel | null,
@@ -91,6 +104,28 @@ describe('Base Resumes page', () => {
     navigateToMock.mockResolvedValue(undefined)
     refreshMock.mockReset()
     refreshMock.mockResolvedValue(undefined)
+    previewState = shallowRef<BaseResumePreviewState>({ status: 'idle' })
+    previewLoadMock = vi.fn((baseResumeId: string) => {
+      previewState.value = { baseResumeId, status: 'loading' }
+      return Promise.resolve(null)
+    })
+    previewResetMock = vi.fn(() => {
+      previewState.value = { status: 'idle' }
+    })
+    previewRetryMock = vi.fn().mockResolvedValue(null)
+    useBaseResumePreviewMock.mockReset()
+    useBaseResumePreviewMock.mockReturnValue({
+      canRetry: computed(
+        () =>
+          previewState.value.status === 'failure' &&
+          previewState.value.failure.retryable,
+      ),
+      isLoading: computed(() => previewState.value.status === 'loading'),
+      load: previewLoadMock,
+      reset: previewResetMock,
+      retry: previewRetryMock,
+      state: previewState,
+    })
     useBaseResumesMock.mockReset()
     setBaseResumesState(partialBaseResumes, 'success')
   })
@@ -107,6 +142,11 @@ describe('Base Resumes page', () => {
     expect(wrapper.text()).toContain('482 KiB')
     expect(wrapper.text()).toContain('Uploaded August 8, 2026')
     expect(wrapper.text()).toContain('Original PDF preserved')
+    expect(
+      wrapper
+        .findAll('button')
+        .filter((button) => button.text().trim() === 'Preview PDF'),
+    ).toHaveLength(2)
     expect(
       wrapper
         .findAll('button')
@@ -173,6 +213,11 @@ describe('Base Resumes page', () => {
     expect(wrapper.text()).toContain(
       'Retire a resume to make another active slot available.',
     )
+    expect(
+      wrapper
+        .findAll('button')
+        .filter((button) => button.text().trim() === 'Preview PDF'),
+    ).toHaveLength(3)
     expect(
       wrapper
         .findAll('button')
@@ -252,6 +297,98 @@ describe('Base Resumes page', () => {
     expect(dialog.text()).toContain('Accessibility Specialist.pdf')
     expect(dialog.text()).toContain('Slot 2 will become available')
     expect(refreshMock).not.toHaveBeenCalled()
+  })
+
+  it('opens the secure preview for the selected resume without exposing storage details', async () => {
+    const wrapper = await mountSuspended(BaseResumesPage)
+    const previewButton = wrapper
+      .findAll('button')
+      .find(
+        (button) =>
+          button.attributes('aria-label') ===
+          'Preview Accessibility Specialist.pdf',
+      )
+
+    await previewButton?.trigger('click')
+    await flushPromises()
+
+    const dialog = wrapper.getComponent(BaseResumePreviewDialog)
+
+    expect(dialog.props('resume')).toEqual(managementItems[1])
+    expect(dialog.text()).toContain('Accessibility Specialist.pdf')
+    expect(dialog.text()).toContain('Original PDF · Private · Immutable')
+    expect(previewLoadMock).toHaveBeenCalledOnce()
+    expect(previewLoadMock).toHaveBeenCalledWith(managementItems[1]!.id)
+    expect(wrapper.findComponent(BaseResumeRetirementDialog).exists()).toBe(
+      false,
+    )
+    expect(wrapper.html()).not.toContain('/storage/v1/')
+
+    dialog.vm.$emit('close')
+    await flushPromises()
+
+    expect(wrapper.findComponent(BaseResumePreviewDialog).exists()).toBe(false)
+
+    wrapper.unmount()
+  })
+
+  it.each([{ recovery: 'refresh' as const }, { recovery: 'sign-in' as const }])(
+    'keeps preview $recovery recovery at the page boundary',
+    async ({ recovery }) => {
+      const wrapper = await mountSuspended(BaseResumesPage)
+      const previewButton = wrapper
+        .findAll('button')
+        .find(
+          (button) =>
+            button.attributes('aria-label') ===
+            'Preview Frontend Engineering.pdf',
+        )
+
+      await previewButton?.trigger('click')
+      wrapper
+        .getComponent(BaseResumePreviewDialog)
+        .vm.$emit('recovery-requested', recovery)
+      await flushPromises()
+
+      expect(wrapper.findComponent(BaseResumePreviewDialog).exists()).toBe(
+        false,
+      )
+
+      if (recovery === 'refresh') {
+        expect(refreshMock).toHaveBeenCalledOnce()
+        expect(navigateToMock).not.toHaveBeenCalled()
+      } else {
+        expect(refreshMock).not.toHaveBeenCalled()
+        expect(navigateToMock).toHaveBeenCalledWith('/sign-in')
+      }
+
+      wrapper.unmount()
+    },
+  )
+
+  it('keeps a preview open when trusted refresh recovery fails', async () => {
+    refreshMock.mockImplementationOnce(async () => {
+      baseResumesStatus.value = 'error'
+    })
+    const wrapper = await mountSuspended(BaseResumesPage)
+    const previewButton = wrapper
+      .findAll('button')
+      .find(
+        (button) =>
+          button.attributes('aria-label') ===
+          'Preview Frontend Engineering.pdf',
+      )
+
+    await previewButton?.trigger('click')
+    wrapper
+      .getComponent(BaseResumePreviewDialog)
+      .vm.$emit('recovery-requested', 'refresh')
+    await flushPromises()
+
+    expect(refreshMock).toHaveBeenCalledOnce()
+    expect(wrapper.findComponent(BaseResumePreviewDialog).exists()).toBe(true)
+
+    wrapper.unmount()
   })
 
   it('reconciles the active collection and capacity through trusted refresh', async () => {
