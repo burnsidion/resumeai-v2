@@ -84,14 +84,23 @@ validation, and sanitized failures. PostgreSQL authorization tests prove the
 one-way owner-only update and reject cross-owner retirement, reactivation,
 timestamp rewriting, and active-slot rearrangement.
 
-The loopback-only Playwright integration test uses disposable confirmed users
-and the real Nuxt, Auth, Data API, RLS, and Storage stack. It verifies that:
+The loopback-only retirement infrastructure integration test uses disposable
+confirmed users and the real Nuxt, Auth, Data API, RLS, and Storage stack. It
+verifies that:
 
 - unauthenticated and cross-owner requests cannot retire the source;
 - an owner can retire and safely repeat the request;
 - immutable row metadata and the exact PDF bytes remain unchanged;
 - the retired source disappears from the active management read; and
 - the released deterministic slot can be assigned to a later upload.
+
+The browser management test exercises the same lifecycle through the real Base
+Resumes cards and confirmation dialog. It fills all three active slots, receives
+one sanitized retry-safe failure, succeeds on an explicit retry, reconciles the
+trusted management read, verifies the retired card and full-capacity state stay
+removed after reload, and uploads a replacement into the lowest released slot.
+Because the successful refresh removes the retired card and its dialog opener,
+the page moves focus to its stable heading after the dialog closes.
 
 Run the local verification with:
 

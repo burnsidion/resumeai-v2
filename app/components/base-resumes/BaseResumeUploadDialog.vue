@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: []
+  'focus-fallback-requested': []
   'recovery-requested': [recovery: 'refresh' | 'sign-in']
   uploaded: [baseResume: UploadedBaseResume]
 }>()
@@ -176,6 +177,8 @@ const deactivateDialog = (): void => {
 
   if (focusTarget?.isConnected) {
     nextTick(() => focusTarget.focus())
+  } else {
+    nextTick(() => emit('focus-fallback-requested'))
   }
 }
 
