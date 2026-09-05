@@ -1,0 +1,1847 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="ResumAI application workspace design prototype"
+    />
+    <title>Applications workspace · ResumAI design prototype</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <svg class="icon-library" aria-hidden="true">
+      <symbol id="icon-dashboard" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </symbol>
+      <symbol id="icon-applications" viewBox="0 0 24 24">
+        <path
+          d="M8 7V5.75A1.75 1.75 0 0 1 9.75 4h4.5A1.75 1.75 0 0 1 16 5.75V7"
+        />
+        <rect x="3" y="7" width="18" height="13" rx="2.5" />
+        <path
+          d="M3 12.5c2.8 1.2 5.8 1.8 9 1.8s6.2-.6 9-1.8M10 13.8v1.5h4v-1.5"
+        />
+      </symbol>
+      <symbol id="icon-resume" viewBox="0 0 24 24">
+        <path d="M6 3h8l4 4v14H6z" />
+        <path d="M14 3v5h5M9 13h6M9 17h6" />
+      </symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24">
+        <path d="M12 5v14M5 12h14" />
+      </symbol>
+      <symbol id="icon-chevron" viewBox="0 0 24 24">
+        <path d="m9 5 7 7-7 7" />
+      </symbol>
+      <symbol id="icon-help" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M9.8 9a2.3 2.3 0 1 1 3.4 2c-.8.5-1.2.9-1.2 2M12 17h.01" />
+      </symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="3" />
+        <path
+          d="M19 13.5v-3l-2-.7a7 7 0 0 0-.6-1.5l.9-1.9-2.1-2.1-1.9.9a7 7 0 0 0-1.5-.6L10.5 3h-3l-.7 2a7 7 0 0 0-1.5.6l-1.9-.9-2.1 2.1.9 1.9a7 7 0 0 0-.6 1.5L0 10.5v3l2 .7a7 7 0 0 0 .6 1.5l-.9 1.9 2.1 2.1 1.9-.9a7 7 0 0 0 1.5.6l.7 2h3l.7-2a7 7 0 0 0 1.5-.6l1.9.9 2.1-2.1-.9-1.9a7 7 0 0 0 .6-1.5z"
+        />
+      </symbol>
+      <symbol id="icon-menu" viewBox="0 0 24 24">
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      </symbol>
+      <symbol id="icon-empty" viewBox="0 0 48 48">
+        <rect x="7" y="10" width="34" height="27" rx="5" />
+        <path d="M17 10V7.5A3.5 3.5 0 0 1 20.5 4h7A3.5 3.5 0 0 1 31 7.5V10" />
+        <path d="M7 22c5.3 2.5 11 3.7 17 3.7s11.7-1.2 17-3.7" />
+        <path d="M24 18v9M19.5 22.5h9" />
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <path d="m5 12.5 4.2 4.2L19 7" />
+      </symbol>
+      <symbol id="icon-edit" viewBox="0 0 24 24">
+        <path d="M4 20h4l11-11-4-4L4 16v4zM13.5 6.5l4 4" />
+      </symbol>
+      <symbol id="icon-external" viewBox="0 0 24 24">
+        <path d="M14 4h6v6M20 4 11 13" />
+        <path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6" />
+      </symbol>
+      <symbol id="icon-alert" viewBox="0 0 24 24">
+        <path d="M12 4 3.5 19h17L12 4zM12 9v4M12 16.5h.01" />
+      </symbol>
+      <symbol id="icon-refresh" viewBox="0 0 24 24">
+        <path d="M20 7v5h-5M4 17v-5h5" />
+        <path d="M6.1 8.2A7 7 0 0 1 18.5 7M17.9 15.8A7 7 0 0 1 5.5 17" />
+      </symbol>
+    </svg>
+
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-populated"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-empty"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-create"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-create-validation"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-create-submitting"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-detail-ready"
+      checked
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-detail-incomplete"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-detail-editing"
+    />
+    <input
+      class="prototype-state-input"
+      type="radio"
+      name="prototype-state"
+      id="state-system"
+    />
+
+    <header class="prototype-controls">
+      <div>
+        <strong>OWL-37 · Applications workspace</strong>
+        <span>Checkpoints 1–3 · List, creation, and detail</span>
+      </div>
+      <fieldset>
+        <legend>Choose a prototype state</legend>
+        <label for="state-populated">Populated</label>
+        <label for="state-empty">List empty</label>
+        <label for="state-create">Create</label>
+        <label for="state-create-validation">Validation</label>
+        <label for="state-create-submitting">Submitting</label>
+        <label for="state-detail-ready">Detail ready</label>
+        <label for="state-detail-incomplete">Needs setup</label>
+        <label for="state-detail-editing">Editing</label>
+        <label for="state-system">System states</label>
+      </fieldset>
+      <p>Resize the browser to review responsive behavior.</p>
+    </header>
+
+    <div class="application-shell">
+      <aside
+        class="desktop-sidebar"
+        aria-label="Authenticated application sidebar"
+      >
+        <div class="sidebar-main">
+          <div class="brand" aria-label="ResumAI">Resum<span>AI</span></div>
+
+          <nav aria-label="Primary navigation">
+            <ul class="navigation-list">
+              <li>
+                <div class="navigation-item">
+                  <svg aria-hidden="true"><use href="#icon-dashboard" /></svg>
+                  <span>Dashboard</span>
+                </div>
+              </li>
+              <li>
+                <div
+                  class="navigation-item navigation-item--active"
+                  aria-current="page"
+                >
+                  <svg aria-hidden="true">
+                    <use href="#icon-applications" />
+                  </svg>
+                  <span>Applications</span>
+                </div>
+              </li>
+              <li>
+                <div class="navigation-item">
+                  <svg aria-hidden="true"><use href="#icon-resume" /></svg>
+                  <span>Base resumes</span>
+                </div>
+              </li>
+            </ul>
+          </nav>
+
+          <div class="sidebar-spacer"></div>
+
+          <nav aria-label="Secondary navigation">
+            <ul class="navigation-list navigation-list--secondary">
+              <li>
+                <div
+                  class="navigation-item navigation-item--muted"
+                  aria-disabled="true"
+                >
+                  <svg aria-hidden="true"><use href="#icon-help" /></svg>
+                  <span>Help</span>
+                </div>
+              </li>
+              <li>
+                <div
+                  class="navigation-item navigation-item--muted"
+                  aria-disabled="true"
+                >
+                  <svg aria-hidden="true"><use href="#icon-settings" /></svg>
+                  <span>Settings</span>
+                </div>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="identity-card">
+          <span class="avatar" aria-hidden="true">IB</span>
+          <span class="identity-copy">
+            <strong>Ian B.</strong>
+            <span>ian@example.com</span>
+          </span>
+          <svg aria-hidden="true"><use href="#icon-chevron" /></svg>
+        </div>
+      </aside>
+
+      <aside
+        class="tablet-rail"
+        aria-label="Collapsed authenticated navigation"
+      >
+        <div class="rail-brand" aria-label="ResumAI">RA</div>
+        <nav aria-label="Collapsed primary navigation">
+          <ul class="rail-navigation">
+            <li>
+              <div class="rail-item" aria-label="Dashboard" title="Dashboard">
+                <svg aria-hidden="true"><use href="#icon-dashboard" /></svg>
+              </div>
+            </li>
+            <li>
+              <div
+                class="rail-item rail-item--active"
+                aria-label="Applications, current page"
+                aria-current="page"
+                title="Applications"
+              >
+                <svg aria-hidden="true"><use href="#icon-applications" /></svg>
+              </div>
+            </li>
+            <li>
+              <div
+                class="rail-item"
+                aria-label="Base resumes"
+                title="Base resumes"
+              >
+                <svg aria-hidden="true"><use href="#icon-resume" /></svg>
+              </div>
+            </li>
+          </ul>
+        </nav>
+        <span class="rail-avatar" aria-label="Account for Ian B.">IB</span>
+      </aside>
+
+      <header class="mobile-topbar">
+        <button type="button" aria-label="Open navigation">
+          <svg aria-hidden="true"><use href="#icon-menu" /></svg>
+        </button>
+        <span class="mobile-brand">Resum<span>AI</span></span>
+        <span class="mobile-page">Applications</span>
+        <span class="mobile-avatar" aria-label="Account for Ian B.">IB</span>
+      </header>
+
+      <main class="page-frame">
+        <section
+          class="page-state page-state--populated"
+          aria-labelledby="applications-populated-heading"
+        >
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Application workspace</p>
+              <h1 id="applications-populated-heading">Applications</h1>
+              <p class="page-introduction">
+                Keep each opportunity, next step, and resume source together in
+                one calm workspace.
+              </p>
+            </div>
+            <button class="button button--primary" type="button">
+              <svg aria-hidden="true"><use href="#icon-plus" /></svg>
+              Create application
+            </button>
+          </header>
+
+          <section
+            class="applications-panel"
+            aria-labelledby="your-applications-heading"
+          >
+            <div class="section-heading">
+              <div>
+                <h2 id="your-applications-heading">Your applications</h2>
+                <p>Most recently updated first</p>
+              </div>
+              <span class="record-count">4 applications</span>
+            </div>
+
+            <div class="application-column-labels" aria-hidden="true">
+              <span>Opportunity</span>
+              <span>Status</span>
+              <span>Tailoring</span>
+              <span>Updated</span>
+              <span></span>
+            </div>
+
+            <ul class="application-list">
+              <li>
+                <button
+                  class="application-row"
+                  type="button"
+                  aria-label="Open Senior Frontend Engineer at Northstar Labs"
+                >
+                  <span class="company-mark company-mark--northstar">N</span>
+                  <span class="opportunity-copy">
+                    <strong>Senior Frontend Engineer</strong>
+                    <span>Northstar Labs</span>
+                  </span>
+                  <span class="status status--draft">Draft</span>
+                  <span class="readiness readiness--ready">
+                    <span aria-hidden="true"></span>
+                    Ready to tailor
+                  </span>
+                  <time datetime="2026-09-05">Today</time>
+                  <svg class="row-chevron" aria-hidden="true">
+                    <use href="#icon-chevron" />
+                  </svg>
+                </button>
+              </li>
+              <li>
+                <button
+                  class="application-row"
+                  type="button"
+                  aria-label="Open Product Engineer at Lantern Health"
+                >
+                  <span class="company-mark company-mark--lantern">L</span>
+                  <span class="opportunity-copy">
+                    <strong>Product Engineer</strong>
+                    <span>Lantern Health</span>
+                  </span>
+                  <span class="status status--applied">Applied</span>
+                  <span class="readiness">
+                    <span aria-hidden="true"></span>
+                    Add base resume
+                  </span>
+                  <time datetime="2026-09-03">Sep 3</time>
+                  <svg class="row-chevron" aria-hidden="true">
+                    <use href="#icon-chevron" />
+                  </svg>
+                </button>
+              </li>
+              <li>
+                <button
+                  class="application-row"
+                  type="button"
+                  aria-label="Open Frontend Engineer at Aether Systems"
+                >
+                  <span class="company-mark company-mark--aether">A</span>
+                  <span class="opportunity-copy">
+                    <strong>Frontend Engineer</strong>
+                    <span>Aether Systems</span>
+                  </span>
+                  <span class="status status--interviewing">Interviewing</span>
+                  <span class="readiness readiness--ready">
+                    <span aria-hidden="true"></span>
+                    Ready to tailor
+                  </span>
+                  <time datetime="2026-08-31">Aug 31</time>
+                  <svg class="row-chevron" aria-hidden="true">
+                    <use href="#icon-chevron" />
+                  </svg>
+                </button>
+              </li>
+              <li>
+                <button
+                  class="application-row"
+                  type="button"
+                  aria-label="Open Accessibility Specialist at Meridian Studio"
+                >
+                  <span class="company-mark company-mark--meridian">M</span>
+                  <span class="opportunity-copy">
+                    <strong>Accessibility Specialist</strong>
+                    <span>Meridian Studio</span>
+                  </span>
+                  <span class="status status--closed">Rejected</span>
+                  <span class="readiness">
+                    <span aria-hidden="true"></span>
+                    No tailored resume
+                  </span>
+                  <time datetime="2026-08-26">Aug 26</time>
+                  <svg class="row-chevron" aria-hidden="true">
+                    <use href="#icon-chevron" />
+                  </svg>
+                </button>
+              </li>
+            </ul>
+          </section>
+        </section>
+
+        <section
+          class="page-state page-state--empty"
+          aria-labelledby="applications-empty-heading"
+        >
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Application workspace</p>
+              <h1 id="applications-empty-heading">Applications</h1>
+              <p class="page-introduction">
+                Keep each opportunity, next step, and resume source together in
+                one calm workspace.
+              </p>
+            </div>
+          </header>
+
+          <section class="empty-panel" aria-labelledby="empty-panel-heading">
+            <span class="empty-icon" aria-hidden="true">
+              <svg><use href="#icon-empty" /></svg>
+            </span>
+            <p class="eyebrow">Your search, organized</p>
+            <h2 id="empty-panel-heading">Create your first application</h2>
+            <p>
+              Save the role information you have now. You can add a base resume
+              and begin tailoring later, whenever you are ready.
+            </p>
+            <button class="button button--primary" type="button">
+              <svg aria-hidden="true"><use href="#icon-plus" /></svg>
+              Create application
+            </button>
+            <span class="empty-note"
+              >Company and role are all you need to begin.</span
+            >
+          </section>
+        </section>
+
+        <section
+          class="page-state page-state--create"
+          aria-labelledby="create-heading"
+        >
+          <button class="back-control" type="button">
+            <svg aria-hidden="true"><use href="#icon-chevron" /></svg>
+            Applications
+          </button>
+
+          <header class="page-header page-header--creation">
+            <div>
+              <p class="eyebrow">New application</p>
+              <h1 id="create-heading">Create application</h1>
+              <p class="page-introduction">
+                Save the opportunity now. You can prepare it for tailoring
+                whenever you are ready.
+              </p>
+            </div>
+            <span class="draft-badge">Creates as Draft</span>
+          </header>
+
+          <form class="creation-grid" aria-label="Create application">
+            <div class="form-panel">
+              <section
+                class="form-section"
+                aria-labelledby="essentials-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Step 01</p>
+                    <h2 id="essentials-heading">Essentials</h2>
+                  </div>
+                  <span>Required</span>
+                </div>
+
+                <div class="field-grid field-grid--two">
+                  <div class="field-group">
+                    <label class="field-label" for="create-company"
+                      >Company</label
+                    >
+                    <input
+                      class="field-control"
+                      id="create-company"
+                      name="company"
+                      type="text"
+                      value="Northstar Labs"
+                      autocomplete="organization"
+                      required
+                    />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="create-role">Role</label>
+                    <input
+                      class="field-control"
+                      id="create-role"
+                      name="role"
+                      type="text"
+                      value="Senior Frontend Engineer"
+                      autocomplete="organization-title"
+                      required
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section
+                class="form-section"
+                aria-labelledby="job-context-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Step 02</p>
+                    <h2 id="job-context-heading">Job context</h2>
+                  </div>
+                  <span>Optional</span>
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label" for="create-description"
+                    >Job description
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <textarea
+                    class="field-control field-control--textarea"
+                    id="create-description"
+                    name="job-description"
+                    rows="8"
+                    placeholder="Paste the job description when you have it."
+                    aria-describedby="create-description-hint"
+                  ></textarea>
+                  <span class="field-hint" id="create-description-hint"
+                    >A job description is needed before tailoring can
+                    begin.</span
+                  >
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label" for="create-url"
+                    >Job posting URL
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <input
+                    class="field-control"
+                    id="create-url"
+                    name="job-url"
+                    type="url"
+                    placeholder="https://company.com/jobs/..."
+                    inputmode="url"
+                  />
+                </div>
+              </section>
+
+              <section class="form-section" aria-labelledby="notes-heading">
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Step 03</p>
+                    <h2 id="notes-heading">Notes</h2>
+                  </div>
+                  <span>Optional</span>
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label" for="create-notes"
+                    >Private notes
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <textarea
+                    class="field-control field-control--textarea field-control--notes"
+                    id="create-notes"
+                    name="notes"
+                    rows="4"
+                  >
+Strong accessibility focus. Ask about design systems.</textarea>
+                  <span class="field-hint">Only you can see these notes.</span>
+                </div>
+              </section>
+
+              <footer class="form-footer">
+                <p>
+                  Saving creates a draft. Tailoring never starts automatically.
+                </p>
+                <div>
+                  <button class="button button--secondary" type="button">
+                    Cancel
+                  </button>
+                  <button class="button button--primary" type="button">
+                    Create application
+                  </button>
+                </div>
+              </footer>
+            </div>
+
+            <aside
+              class="creation-sidebar"
+              aria-label="Application preparation"
+            >
+              <fieldset class="resume-selector">
+                <legend>Base resume <span>Optional</span></legend>
+                <p>
+                  Choose the source you may tailor later. Your original PDF will
+                  never be changed.
+                </p>
+
+                <label class="resume-option">
+                  <input
+                    type="radio"
+                    name="create-resume"
+                    value="none"
+                    checked
+                  />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-option-copy">
+                    <strong>No base resume yet</strong>
+                    <span>You can choose one later</span>
+                  </span>
+                </label>
+                <label class="resume-option">
+                  <input type="radio" name="create-resume" value="frontend" />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-document" aria-hidden="true">PDF</span>
+                  <span class="resume-option-copy">
+                    <strong>Frontend Engineer.pdf</strong>
+                    <span>Uploaded Aug 28 · 284 KB</span>
+                  </span>
+                </label>
+                <label class="resume-option">
+                  <input
+                    type="radio"
+                    name="create-resume"
+                    value="accessibility"
+                  />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-document" aria-hidden="true">PDF</span>
+                  <span class="resume-option-copy">
+                    <strong>Accessibility Specialist.pdf</strong>
+                    <span>Uploaded Aug 14 · 319 KB</span>
+                  </span>
+                </label>
+              </fieldset>
+
+              <section
+                class="readiness-panel readiness-panel--incomplete"
+                aria-labelledby="preparation-heading"
+              >
+                <p class="section-kicker">Preparation</p>
+                <h2 id="preparation-heading">Save now, prepare later</h2>
+                <p>
+                  This draft is missing two optional items needed before
+                  tailoring can begin.
+                </p>
+                <ul>
+                  <li>
+                    <span class="readiness-marker" aria-hidden="true"></span>
+                    <span>
+                      <strong>Add a job description</strong>
+                      <small>Needed to understand the role</small>
+                    </span>
+                  </li>
+                  <li>
+                    <span class="readiness-marker" aria-hidden="true"></span>
+                    <span>
+                      <strong>Choose a base resume</strong>
+                      <small>Needed as the source of truth</small>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+            </aside>
+          </form>
+        </section>
+
+        <section
+          class="page-state page-state--create-validation"
+          aria-labelledby="create-validation-heading"
+        >
+          <button class="back-control" type="button">
+            <svg aria-hidden="true"><use href="#icon-chevron" /></svg>
+            Applications
+          </button>
+
+          <header class="page-header page-header--creation">
+            <div>
+              <p class="eyebrow">New application</p>
+              <h1 id="create-validation-heading">Create application</h1>
+              <p class="page-introduction">
+                Save the opportunity now. You can prepare it for tailoring
+                whenever you are ready.
+              </p>
+            </div>
+            <span class="draft-badge">Creates as Draft</span>
+          </header>
+
+          <form
+            class="creation-grid"
+            aria-label="Create application"
+            novalidate
+          >
+            <div class="form-panel">
+              <div class="validation-summary" role="alert" tabindex="-1">
+                <strong>Two details need your attention</strong>
+                <p>Add a company and role before creating this application.</p>
+              </div>
+
+              <section
+                class="form-section"
+                aria-labelledby="validation-essentials-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Step 01</p>
+                    <h2 id="validation-essentials-heading">Essentials</h2>
+                  </div>
+                  <span>Required</span>
+                </div>
+
+                <div class="field-grid field-grid--two">
+                  <div class="field-group">
+                    <label class="field-label" for="validation-company"
+                      >Company</label
+                    >
+                    <input
+                      class="field-control field-control--error"
+                      id="validation-company"
+                      name="company"
+                      type="text"
+                      aria-invalid="true"
+                      aria-describedby="validation-company-error"
+                      required
+                    />
+                    <span class="field-error" id="validation-company-error"
+                      >Enter a company name.</span
+                    >
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="validation-role"
+                      >Role</label
+                    >
+                    <input
+                      class="field-control field-control--error"
+                      id="validation-role"
+                      name="role"
+                      type="text"
+                      aria-invalid="true"
+                      aria-describedby="validation-role-error"
+                      required
+                    />
+                    <span class="field-error" id="validation-role-error"
+                      >Enter a role or position title.</span
+                    >
+                  </div>
+                </div>
+              </section>
+
+              <section
+                class="form-section"
+                aria-labelledby="validation-context-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Step 02</p>
+                    <h2 id="validation-context-heading">Job context</h2>
+                  </div>
+                  <span>Optional</span>
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label" for="validation-description"
+                    >Job description
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <textarea
+                    class="field-control field-control--textarea"
+                    id="validation-description"
+                    name="job-description"
+                    rows="8"
+                    placeholder="Paste the job description when you have it."
+                  ></textarea>
+                  <span class="field-hint"
+                    >A job description is needed before tailoring can
+                    begin.</span
+                  >
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label" for="validation-url"
+                    >Job posting URL
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <input
+                    class="field-control"
+                    id="validation-url"
+                    name="job-url"
+                    type="url"
+                    placeholder="https://company.com/jobs/..."
+                  />
+                </div>
+              </section>
+
+              <section
+                class="form-section"
+                aria-labelledby="validation-notes-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Step 03</p>
+                    <h2 id="validation-notes-heading">Notes</h2>
+                  </div>
+                  <span>Optional</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="validation-notes"
+                    >Private notes
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <textarea
+                    class="field-control field-control--textarea field-control--notes"
+                    id="validation-notes"
+                    name="notes"
+                    rows="4"
+                  ></textarea>
+                  <span class="field-hint">Only you can see these notes.</span>
+                </div>
+              </section>
+
+              <footer class="form-footer">
+                <p>
+                  Saving creates a draft. Tailoring never starts automatically.
+                </p>
+                <div>
+                  <button class="button button--secondary" type="button">
+                    Cancel
+                  </button>
+                  <button class="button button--primary" type="button">
+                    Create application
+                  </button>
+                </div>
+              </footer>
+            </div>
+
+            <aside
+              class="creation-sidebar"
+              aria-label="Application preparation"
+            >
+              <fieldset class="resume-selector">
+                <legend>Base resume <span>Optional</span></legend>
+                <p>
+                  Choose the source you may tailor later. Your original PDF will
+                  never be changed.
+                </p>
+                <label class="resume-option">
+                  <input
+                    type="radio"
+                    name="validation-resume"
+                    value="none"
+                    checked
+                  />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-option-copy">
+                    <strong>No base resume yet</strong>
+                    <span>You can choose one later</span>
+                  </span>
+                </label>
+                <label class="resume-option">
+                  <input
+                    type="radio"
+                    name="validation-resume"
+                    value="frontend"
+                  />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-document" aria-hidden="true">PDF</span>
+                  <span class="resume-option-copy">
+                    <strong>Frontend Engineer.pdf</strong>
+                    <span>Uploaded Aug 28 · 284 KB</span>
+                  </span>
+                </label>
+                <label class="resume-option">
+                  <input
+                    type="radio"
+                    name="validation-resume"
+                    value="accessibility"
+                  />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-document" aria-hidden="true">PDF</span>
+                  <span class="resume-option-copy">
+                    <strong>Accessibility Specialist.pdf</strong>
+                    <span>Uploaded Aug 14 · 319 KB</span>
+                  </span>
+                </label>
+              </fieldset>
+
+              <section
+                class="readiness-panel readiness-panel--incomplete"
+                aria-labelledby="validation-preparation-heading"
+              >
+                <p class="section-kicker">Preparation</p>
+                <h2 id="validation-preparation-heading">
+                  Save now, prepare later
+                </h2>
+                <p>
+                  This draft is missing two optional items needed before
+                  tailoring can begin.
+                </p>
+                <ul>
+                  <li>
+                    <span class="readiness-marker" aria-hidden="true"></span>
+                    <span>
+                      <strong>Add a job description</strong>
+                      <small>Needed to understand the role</small>
+                    </span>
+                  </li>
+                  <li>
+                    <span class="readiness-marker" aria-hidden="true"></span>
+                    <span>
+                      <strong>Choose a base resume</strong>
+                      <small>Needed as the source of truth</small>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+            </aside>
+          </form>
+        </section>
+
+        <section
+          class="page-state page-state--create-submitting"
+          aria-labelledby="create-submitting-heading"
+        >
+          <button class="back-control" type="button" disabled>
+            <svg aria-hidden="true"><use href="#icon-chevron" /></svg>
+            Applications
+          </button>
+
+          <header class="page-header page-header--creation">
+            <div>
+              <p class="eyebrow">New application</p>
+              <h1 id="create-submitting-heading">Create application</h1>
+              <p class="page-introduction">
+                Save the opportunity now. You can prepare it for tailoring
+                whenever you are ready.
+              </p>
+            </div>
+            <span class="draft-badge">Creates as Draft</span>
+          </header>
+
+          <form
+            class="creation-grid creation-grid--busy"
+            aria-label="Create application"
+            aria-busy="true"
+          >
+            <div class="form-panel">
+              <section
+                class="form-section"
+                aria-labelledby="submitting-essentials-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Step 01</p>
+                    <h2 id="submitting-essentials-heading">Essentials</h2>
+                  </div>
+                  <span>Required</span>
+                </div>
+                <div class="field-grid field-grid--two">
+                  <div class="field-group">
+                    <label class="field-label" for="submitting-company"
+                      >Company</label
+                    >
+                    <input
+                      class="field-control"
+                      id="submitting-company"
+                      type="text"
+                      value="Northstar Labs"
+                      disabled
+                    />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="submitting-role"
+                      >Role</label
+                    >
+                    <input
+                      class="field-control"
+                      id="submitting-role"
+                      type="text"
+                      value="Senior Frontend Engineer"
+                      disabled
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section
+                class="form-section"
+                aria-labelledby="submitting-context-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Step 02</p>
+                    <h2 id="submitting-context-heading">Job context</h2>
+                  </div>
+                  <span>Optional</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="submitting-description"
+                    >Job description
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <textarea
+                    class="field-control field-control--textarea"
+                    id="submitting-description"
+                    rows="8"
+                    disabled
+                  >
+Build accessible, reliable product experiences with Vue and TypeScript. Partner with design and backend engineering to evolve a shared component system and deliver thoughtful customer workflows.</textarea>
+                  <span class="field-hint"
+                    >A job description is needed before tailoring can
+                    begin.</span
+                  >
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="submitting-url"
+                    >Job posting URL
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <input
+                    class="field-control"
+                    id="submitting-url"
+                    type="url"
+                    value="https://jobs.example.com/senior-frontend-engineer"
+                    disabled
+                  />
+                </div>
+              </section>
+
+              <section
+                class="form-section"
+                aria-labelledby="submitting-notes-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Step 03</p>
+                    <h2 id="submitting-notes-heading">Notes</h2>
+                  </div>
+                  <span>Optional</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="submitting-notes"
+                    >Private notes
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <textarea
+                    class="field-control field-control--textarea field-control--notes"
+                    id="submitting-notes"
+                    rows="4"
+                    disabled
+                  >
+Strong accessibility focus. Ask about design systems.</textarea>
+                  <span class="field-hint">Only you can see these notes.</span>
+                </div>
+              </section>
+
+              <footer class="form-footer">
+                <p role="status">
+                  <span class="spinner" aria-hidden="true"></span>
+                  Creating your draft application…
+                </p>
+                <div>
+                  <button
+                    class="button button--secondary"
+                    type="button"
+                    disabled
+                  >
+                    Cancel
+                  </button>
+                  <button class="button button--primary" type="button" disabled>
+                    Creating application…
+                  </button>
+                </div>
+              </footer>
+            </div>
+
+            <aside
+              class="creation-sidebar"
+              aria-label="Application preparation"
+            >
+              <fieldset class="resume-selector" disabled>
+                <legend>Base resume <span>Optional</span></legend>
+                <p>
+                  Choose the source you may tailor later. Your original PDF will
+                  never be changed.
+                </p>
+                <label class="resume-option">
+                  <input type="radio" name="submitting-resume" value="none" />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-option-copy">
+                    <strong>No base resume yet</strong>
+                    <span>You can choose one later</span>
+                  </span>
+                </label>
+                <label class="resume-option">
+                  <input
+                    type="radio"
+                    name="submitting-resume"
+                    value="frontend"
+                    checked
+                  />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-document" aria-hidden="true">PDF</span>
+                  <span class="resume-option-copy">
+                    <strong>Frontend Engineer.pdf</strong>
+                    <span>Uploaded Aug 28 · 284 KB</span>
+                  </span>
+                </label>
+                <label class="resume-option">
+                  <input
+                    type="radio"
+                    name="submitting-resume"
+                    value="accessibility"
+                  />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-document" aria-hidden="true">PDF</span>
+                  <span class="resume-option-copy">
+                    <strong>Accessibility Specialist.pdf</strong>
+                    <span>Uploaded Aug 14 · 319 KB</span>
+                  </span>
+                </label>
+              </fieldset>
+
+              <section
+                class="readiness-panel readiness-panel--complete"
+                aria-labelledby="submitting-preparation-heading"
+              >
+                <p class="section-kicker">Preparation complete</p>
+                <h2 id="submitting-preparation-heading">
+                  Ready after this draft is created
+                </h2>
+                <p>
+                  The job description and source resume are prepared. Tailoring
+                  will still begin only when you request it.
+                </p>
+                <ul>
+                  <li>
+                    <svg aria-hidden="true"><use href="#icon-check" /></svg>
+                    <span>
+                      <strong>Job description added</strong>
+                      <small>Role context is available</small>
+                    </span>
+                  </li>
+                  <li>
+                    <svg aria-hidden="true"><use href="#icon-check" /></svg>
+                    <span>
+                      <strong>Base resume selected</strong>
+                      <small>Frontend Engineer.pdf</small>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+            </aside>
+          </form>
+        </section>
+
+        <section
+          class="page-state page-state--detail-ready"
+          aria-labelledby="detail-ready-heading"
+        >
+          <button class="back-control" type="button">
+            <svg aria-hidden="true"><use href="#icon-chevron" /></svg>
+            Applications
+          </button>
+
+          <header class="detail-hero">
+            <div class="detail-identity">
+              <span
+                class="company-mark company-mark--northstar"
+                aria-hidden="true"
+                >N</span
+              >
+              <div>
+                <p class="eyebrow">Northstar Labs</p>
+                <h1 id="detail-ready-heading">Senior Frontend Engineer</h1>
+                <p>Last updated today at 3:42 PM</p>
+              </div>
+            </div>
+            <span class="status status--draft">Draft</span>
+          </header>
+
+          <div class="detail-grid">
+            <article
+              class="detail-panel"
+              aria-labelledby="ready-details-heading"
+            >
+              <header class="detail-panel-heading">
+                <div>
+                  <p class="section-kicker">Opportunity</p>
+                  <h2 id="ready-details-heading">Application details</h2>
+                </div>
+                <button
+                  class="button button--secondary button--compact"
+                  type="button"
+                >
+                  <svg aria-hidden="true"><use href="#icon-edit" /></svg>
+                  Edit details
+                </button>
+              </header>
+
+              <dl class="detail-summary">
+                <div>
+                  <dt>Company</dt>
+                  <dd>Northstar Labs</dd>
+                </div>
+                <div>
+                  <dt>Role</dt>
+                  <dd>Senior Frontend Engineer</dd>
+                </div>
+                <div>
+                  <dt>Job posting</dt>
+                  <dd>
+                    <span class="reference-link">
+                      jobs.example.com/senior-frontend-engineer
+                      <svg aria-hidden="true">
+                        <use href="#icon-external" />
+                      </svg>
+                    </span>
+                  </dd>
+                </div>
+              </dl>
+
+              <section
+                class="detail-copy"
+                aria-labelledby="ready-description-heading"
+              >
+                <h3 id="ready-description-heading">Job description</h3>
+                <p>
+                  Build accessible, reliable product experiences with Vue and
+                  TypeScript. Partner with design and backend engineering to
+                  evolve a shared component system and deliver thoughtful
+                  customer workflows.
+                </p>
+                <p>
+                  You will help establish frontend standards, mentor teammates,
+                  and improve the quality and accessibility of the product.
+                </p>
+              </section>
+
+              <section
+                class="detail-copy detail-copy--notes"
+                aria-labelledby="ready-notes-heading"
+              >
+                <h3 id="ready-notes-heading">Private notes</h3>
+                <p>
+                  Strong accessibility focus. Ask about the design-system
+                  roadmap and how product teams share ownership of quality.
+                </p>
+              </section>
+            </article>
+
+            <aside
+              class="detail-sidebar"
+              aria-label="Application status and preparation"
+            >
+              <section
+                class="detail-card"
+                aria-labelledby="ready-progress-heading"
+              >
+                <p class="section-kicker">Tracking</p>
+                <h2 id="ready-progress-heading">Application progress</h2>
+                <dl class="tracking-list">
+                  <div>
+                    <dt>Status</dt>
+                    <dd><span class="status status--draft">Draft</span></dd>
+                  </div>
+                  <div>
+                    <dt>Applied on</dt>
+                    <dd class="muted-value">Not set</dd>
+                  </div>
+                  <div>
+                    <dt>Created</dt>
+                    <dd>September 5, 2026</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section
+                class="detail-card"
+                aria-labelledby="ready-source-heading"
+              >
+                <p class="section-kicker">Selected source</p>
+                <h2 id="ready-source-heading">Base resume</h2>
+                <div class="source-document">
+                  <span class="resume-document" aria-hidden="true">PDF</span>
+                  <span>
+                    <strong>Frontend Engineer.pdf</strong>
+                    <small>Original remains private and unchanged</small>
+                  </span>
+                </div>
+              </section>
+
+              <section
+                class="readiness-panel readiness-panel--complete"
+                aria-labelledby="ready-tailoring-heading"
+              >
+                <p class="section-kicker">Preparation complete</p>
+                <h2 id="ready-tailoring-heading">Ready for tailoring</h2>
+                <p>
+                  The role context and source resume are in place. Tailoring is
+                  intentionally unavailable in this design slice.
+                </p>
+                <ul>
+                  <li>
+                    <svg aria-hidden="true"><use href="#icon-check" /></svg>
+                    <span>
+                      <strong>Job description added</strong>
+                      <small>Role context is available</small>
+                    </span>
+                  </li>
+                  <li>
+                    <svg aria-hidden="true"><use href="#icon-check" /></svg>
+                    <span>
+                      <strong>Base resume selected</strong>
+                      <small>Frontend Engineer.pdf</small>
+                    </span>
+                  </li>
+                </ul>
+                <div class="future-capability">
+                  Tailoring will begin here in a future implementation.
+                </div>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <section
+          class="page-state page-state--detail-incomplete"
+          aria-labelledby="detail-incomplete-heading"
+        >
+          <button class="back-control" type="button">
+            <svg aria-hidden="true"><use href="#icon-chevron" /></svg>
+            Applications
+          </button>
+
+          <header class="detail-hero">
+            <div class="detail-identity">
+              <span
+                class="company-mark company-mark--lantern"
+                aria-hidden="true"
+                >L</span
+              >
+              <div>
+                <p class="eyebrow">Lantern Health</p>
+                <h1 id="detail-incomplete-heading">Product Engineer</h1>
+                <p>Last updated September 3</p>
+              </div>
+            </div>
+            <span class="status status--draft">Draft</span>
+          </header>
+
+          <div class="detail-grid">
+            <article
+              class="detail-panel"
+              aria-labelledby="incomplete-details-heading"
+            >
+              <header class="detail-panel-heading">
+                <div>
+                  <p class="section-kicker">Opportunity</p>
+                  <h2 id="incomplete-details-heading">Application details</h2>
+                </div>
+                <button
+                  class="button button--primary button--compact"
+                  type="button"
+                >
+                  <svg aria-hidden="true"><use href="#icon-edit" /></svg>
+                  Add missing details
+                </button>
+              </header>
+
+              <dl class="detail-summary">
+                <div>
+                  <dt>Company</dt>
+                  <dd>Lantern Health</dd>
+                </div>
+                <div>
+                  <dt>Role</dt>
+                  <dd>Product Engineer</dd>
+                </div>
+                <div>
+                  <dt>Job posting</dt>
+                  <dd class="muted-value">Not added</dd>
+                </div>
+              </dl>
+
+              <section
+                class="detail-copy"
+                aria-labelledby="incomplete-description-heading"
+              >
+                <h3 id="incomplete-description-heading">Job description</h3>
+                <div class="missing-content">
+                  <span class="readiness-marker" aria-hidden="true"></span>
+                  <span>
+                    <strong>No job description yet</strong>
+                    <small
+                      >Add the role details when you are ready to prepare for
+                      tailoring.</small
+                    >
+                  </span>
+                </div>
+              </section>
+
+              <section
+                class="detail-copy detail-copy--notes"
+                aria-labelledby="incomplete-notes-heading"
+              >
+                <h3 id="incomplete-notes-heading">Private notes</h3>
+                <p>
+                  Former teammate recommended the product team. Review the role
+                  when the full posting is available.
+                </p>
+              </section>
+            </article>
+
+            <aside
+              class="detail-sidebar"
+              aria-label="Application status and preparation"
+            >
+              <section
+                class="detail-card"
+                aria-labelledby="incomplete-progress-heading"
+              >
+                <p class="section-kicker">Tracking</p>
+                <h2 id="incomplete-progress-heading">Application progress</h2>
+                <dl class="tracking-list">
+                  <div>
+                    <dt>Status</dt>
+                    <dd><span class="status status--draft">Draft</span></dd>
+                  </div>
+                  <div>
+                    <dt>Applied on</dt>
+                    <dd class="muted-value">Not set</dd>
+                  </div>
+                  <div>
+                    <dt>Created</dt>
+                    <dd>September 3, 2026</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section
+                class="detail-card detail-card--missing"
+                aria-labelledby="incomplete-source-heading"
+              >
+                <p class="section-kicker">Selected source</p>
+                <h2 id="incomplete-source-heading">Base resume</h2>
+                <div class="missing-content missing-content--compact">
+                  <span class="readiness-marker" aria-hidden="true"></span>
+                  <span>
+                    <strong>No base resume selected</strong>
+                    <small
+                      >You can choose an active resume while editing.</small
+                    >
+                  </span>
+                </div>
+              </section>
+
+              <section
+                class="readiness-panel readiness-panel--incomplete"
+                aria-labelledby="incomplete-tailoring-heading"
+              >
+                <p class="section-kicker">Preparation</p>
+                <h2 id="incomplete-tailoring-heading">
+                  Not ready for tailoring
+                </h2>
+                <p>
+                  This application is safely saved. Add both items below before
+                  a future tailoring request can begin.
+                </p>
+                <ul>
+                  <li>
+                    <span class="readiness-marker" aria-hidden="true"></span>
+                    <span>
+                      <strong>Add a job description</strong>
+                      <small>Needed to understand the role</small>
+                    </span>
+                  </li>
+                  <li>
+                    <span class="readiness-marker" aria-hidden="true"></span>
+                    <span>
+                      <strong>Choose a base resume</strong>
+                      <small>Needed as the source of truth</small>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+            </aside>
+          </div>
+        </section>
+
+        <section
+          class="page-state page-state--detail-editing"
+          aria-labelledby="detail-editing-heading"
+        >
+          <button class="back-control" type="button">
+            <svg aria-hidden="true"><use href="#icon-chevron" /></svg>
+            Application details
+          </button>
+
+          <header class="page-header page-header--creation">
+            <div>
+              <p class="eyebrow">Northstar Labs</p>
+              <h1 id="detail-editing-heading">Edit application</h1>
+              <p class="page-introduction">
+                Update the opportunity and tracking details. Saving changes does
+                not start tailoring.
+              </p>
+            </div>
+            <span class="status status--applied">Applied</span>
+          </header>
+
+          <form class="creation-grid" aria-label="Edit application">
+            <div class="form-panel">
+              <section
+                class="form-section"
+                aria-labelledby="editing-opportunity-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Opportunity</p>
+                    <h2 id="editing-opportunity-heading">Role details</h2>
+                  </div>
+                  <span>Company and role required</span>
+                </div>
+                <div class="field-grid field-grid--two">
+                  <div class="field-group">
+                    <label class="field-label" for="editing-company"
+                      >Company</label
+                    >
+                    <input
+                      class="field-control"
+                      id="editing-company"
+                      name="company"
+                      type="text"
+                      value="Northstar Labs"
+                      required
+                    />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="editing-role">Role</label>
+                    <input
+                      class="field-control"
+                      id="editing-role"
+                      name="role"
+                      type="text"
+                      value="Senior Frontend Engineer"
+                      required
+                    />
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="editing-status"
+                      >Status</label
+                    >
+                    <select
+                      class="field-control"
+                      id="editing-status"
+                      name="status"
+                    >
+                      <option>Draft</option>
+                      <option selected>Applied</option>
+                      <option>Interviewing</option>
+                      <option>Offer</option>
+                      <option>Rejected</option>
+                      <option>Withdrawn</option>
+                    </select>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label" for="editing-applied-on"
+                      >Applied on
+                      <span class="field-optional">Optional</span></label
+                    >
+                    <input
+                      class="field-control"
+                      id="editing-applied-on"
+                      name="applied-on"
+                      type="date"
+                      value="2026-08-29"
+                    />
+                  </div>
+                </div>
+              </section>
+
+              <section
+                class="form-section"
+                aria-labelledby="editing-context-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Job context</p>
+                    <h2 id="editing-context-heading">Role information</h2>
+                  </div>
+                  <span>Optional</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="editing-description"
+                    >Job description
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <textarea
+                    class="field-control field-control--textarea"
+                    id="editing-description"
+                    name="job-description"
+                    rows="8"
+                  >
+Build accessible, reliable product experiences with Vue and TypeScript. Partner with design and backend engineering to evolve a shared component system and deliver thoughtful customer workflows.</textarea>
+                  <span class="field-hint"
+                    >Changing the role context does not automatically run
+                    tailoring.</span
+                  >
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="editing-url"
+                    >Job posting URL
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <input
+                    class="field-control"
+                    id="editing-url"
+                    name="job-url"
+                    type="url"
+                    value="https://jobs.example.com/senior-frontend-engineer"
+                  />
+                  <span class="field-hint"
+                    >Stored for reference; ResumAI does not import from this
+                    link.</span
+                  >
+                </div>
+              </section>
+
+              <section
+                class="form-section"
+                aria-labelledby="editing-notes-heading"
+              >
+                <div class="form-section-heading">
+                  <div>
+                    <p class="section-kicker">Notes</p>
+                    <h2 id="editing-notes-heading">Private context</h2>
+                  </div>
+                  <span>Optional</span>
+                </div>
+                <div class="field-group">
+                  <label class="field-label" for="editing-notes"
+                    >Private notes
+                    <span class="field-optional">Optional</span></label
+                  >
+                  <textarea
+                    class="field-control field-control--textarea field-control--notes"
+                    id="editing-notes"
+                    name="notes"
+                    rows="4"
+                  >
+Strong accessibility focus. Ask about the design-system roadmap and how product teams share ownership of quality.</textarea>
+                  <span class="field-hint">Only you can see these notes.</span>
+                </div>
+              </section>
+
+              <footer class="form-footer">
+                <p>Changes affect this application only.</p>
+                <div>
+                  <button class="button button--secondary" type="button">
+                    Cancel
+                  </button>
+                  <button class="button button--primary" type="button">
+                    Save changes
+                  </button>
+                </div>
+              </footer>
+            </div>
+
+            <aside
+              class="creation-sidebar"
+              aria-label="Application source and readiness"
+            >
+              <fieldset class="resume-selector">
+                <legend>Base resume <span>Optional</span></legend>
+                <p>
+                  Select the source for future tailoring. The uploaded original
+                  remains unchanged.
+                </p>
+                <label class="resume-option">
+                  <input type="radio" name="editing-resume" value="none" />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-option-copy">
+                    <strong>No base resume</strong>
+                    <span>Save without a selected source</span>
+                  </span>
+                </label>
+                <label class="resume-option">
+                  <input
+                    type="radio"
+                    name="editing-resume"
+                    value="frontend"
+                    checked
+                  />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-document" aria-hidden="true">PDF</span>
+                  <span class="resume-option-copy">
+                    <strong>Frontend Engineer.pdf</strong>
+                    <span>Uploaded Aug 28 · 284 KB</span>
+                  </span>
+                </label>
+                <label class="resume-option">
+                  <input
+                    type="radio"
+                    name="editing-resume"
+                    value="accessibility"
+                  />
+                  <span class="selection-indicator" aria-hidden="true"></span>
+                  <span class="resume-document" aria-hidden="true">PDF</span>
+                  <span class="resume-option-copy">
+                    <strong>Accessibility Specialist.pdf</strong>
+                    <span>Uploaded Aug 14 · 319 KB</span>
+                  </span>
+                </label>
+              </fieldset>
+
+              <section
+                class="readiness-panel readiness-panel--complete"
+                aria-labelledby="editing-readiness-heading"
+              >
+                <p class="section-kicker">Current preparation</p>
+                <h2 id="editing-readiness-heading">Ready for tailoring</h2>
+                <p>
+                  Readiness is derived from the saved job description and an
+                  available selected base resume.
+                </p>
+                <ul>
+                  <li>
+                    <svg aria-hidden="true"><use href="#icon-check" /></svg>
+                    <span>
+                      <strong>Job description added</strong>
+                      <small>Role context is available</small>
+                    </span>
+                  </li>
+                  <li>
+                    <svg aria-hidden="true"><use href="#icon-check" /></svg>
+                    <span>
+                      <strong>Base resume selected</strong>
+                      <small>Frontend Engineer.pdf</small>
+                    </span>
+                  </li>
+                </ul>
+              </section>
+            </aside>
+          </form>
+        </section>
+
+        <section
+          class="page-state page-state--system"
+          aria-labelledby="system-states-heading"
+        >
+          <header class="page-header">
+            <div>
+              <p class="eyebrow">Supporting behavior</p>
+              <h1 id="system-states-heading">Application system states</h1>
+              <p class="page-introduction">
+                Calm, explicit feedback for waiting, recoverable failure, and
+                missing or inaccessible applications.
+              </p>
+            </div>
+          </header>
+
+          <div class="system-state-grid">
+            <article
+              class="system-preview"
+              aria-labelledby="loading-preview-heading"
+            >
+              <header>
+                <p class="section-kicker">Loading</p>
+                <h2 id="loading-preview-heading">Preserve the page shape</h2>
+              </header>
+              <div
+                class="loading-preview"
+                aria-busy="true"
+                aria-label="Loading application"
+              >
+                <span class="skeleton skeleton--eyebrow"></span>
+                <span class="skeleton skeleton--title"></span>
+                <span class="skeleton skeleton--copy"></span>
+                <div class="skeleton-grid" aria-hidden="true">
+                  <span class="skeleton skeleton--panel"></span>
+                  <span class="skeleton skeleton--side"></span>
+                </div>
+                <span class="visually-hidden">Loading application…</span>
+              </div>
+            </article>
+
+            <article
+              class="system-preview"
+              aria-labelledby="error-preview-heading"
+            >
+              <header>
+                <p class="section-kicker">Recoverable failure</p>
+                <h2 id="error-preview-heading">Keep a clear way forward</h2>
+              </header>
+              <div class="system-message" role="alert">
+                <span class="system-icon system-icon--error" aria-hidden="true">
+                  <svg><use href="#icon-alert" /></svg>
+                </span>
+                <h3>We couldn’t load this application</h3>
+                <p>
+                  Your information has not been changed. Check your connection
+                  and try again.
+                </p>
+                <div class="system-actions">
+                  <button class="button button--primary" type="button">
+                    <svg aria-hidden="true"><use href="#icon-refresh" /></svg>
+                    Try again
+                  </button>
+                  <button class="button button--secondary" type="button">
+                    Back to applications
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <article
+              class="system-preview"
+              aria-labelledby="missing-preview-heading"
+            >
+              <header>
+                <p class="section-kicker">Missing or inaccessible</p>
+                <h2 id="missing-preview-heading">Reveal no private detail</h2>
+              </header>
+              <div class="system-message">
+                <span class="system-icon" aria-hidden="true">
+                  <svg><use href="#icon-applications" /></svg>
+                </span>
+                <h3>Application not found</h3>
+                <p>
+                  The link may be incorrect, or you may not have access to this
+                  record. No application details are shown.
+                </p>
+                <div class="system-actions">
+                  <button class="button button--primary" type="button">
+                    Back to applications
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
