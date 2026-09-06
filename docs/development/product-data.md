@@ -3,7 +3,9 @@
 OWL-21 establishes the trusted, read-only product-data boundary above the MVP
 schema and RLS policies. OWL-22 connects the dashboard to that boundary, while
 OWL-30 adds a dedicated Base Resumes management read without widening the
-dashboard preview contract.
+dashboard preview contract. OWL-39 adds the first application-management server
+boundary for creating, listing, loading, and updating the authenticated user's
+applications.
 
 ## Ownership and dependency direction
 
@@ -105,6 +107,38 @@ because the card action that opened the dialog has been removed. Retry and
 recovery state remains owned by the mutation composable and page; the product
 read stays read-only.
 
+## Application management boundary
+
+The application-management API exposes these authenticated server operations:
+
+- `GET /api/applications` lists the current user's applications using the
+  deterministic repository order and a narrow summary representation.
+- `POST /api/applications` creates a normalized draft and returns its safe detail
+  representation.
+- `GET /api/applications/:id` loads one owner-visible application.
+- `PATCH /api/applications/:id` updates only the approved mutable fields.
+
+Each request creates one cookie-aware Supabase client, resolves the trusted Auth
+subject, and passes that client and subject identifier through the service and
+repository layers. The browser never supplies `user_id`, server-owned
+timestamps, or creation status. Strict shared schemas reject unknown fields and
+normalize optional text before a use case runs.
+
+Applications may be created without a job description or selected resume. A
+new resume selection must identify an active resume owned by the same user.
+Readiness remains a deterministic derived value: tailoring is ready only when a
+job description and an available selected base resume are both present.
+
+Missing and cross-owner application identifiers produce the same unavailable
+response. Inaccessible resume identifiers likewise produce one stable response
+without revealing whether another user owns the row. Supabase provider details,
+database rows, ownership identifiers, storage keys, and hashes never cross the
+HTTP boundary.
+
+OWL-39 intentionally adds no browser composable or application page. Those
+consumer-facing concerns begin with the subsequent application workflow
+tickets.
+
 ## Error boundary
 
 Provider errors and unexpected database values are converted into sanitized
@@ -131,20 +165,23 @@ committed file no longer matches the migration-controlled schema.
 
 Fast unit and Nuxt route tests cover contracts, repository query construction,
 safe projections, zero and capacity states, deterministic ordering,
-orchestration, trusted authentication handoff, response mapping, and error
-sanitization.
+orchestration, trusted authentication handoff, response mapping, mutation
+validation, and error sanitization.
 
 The Playwright integration suite creates disposable confirmed users against the
 isolated local Supabase stack. It verifies that each owner receives only their
 data, retired resumes stay outside the active management collection, safe
 projections exclude persistence details, and deliberately requesting another
 user's identifier still returns an empty result under RLS. Browser coverage also
-verifies authenticated navigation to the Base Resumes page, zero state, shared
-upload-dialog behavior, trusted refresh and reload persistence, full-capacity
-presentation, retry-safe retirement, deterministic replacement-slot reuse, and
-the final persisted collection. Responsive checks cover the expanded desktop
-shell, collapsed tablet shell, and mobile drawer without introducing a separate
-product-data path.
+verifies draft application creation, normalized updates, deterministic
+readiness, owner-only lists and details, cross-owner mutation denial,
+inaccessible resume-selection denial, and rejection of client-controlled
+ownership. Base Resumes coverage verifies authenticated navigation, zero state,
+shared upload-dialog behavior, trusted refresh and reload persistence,
+full-capacity presentation, retry-safe retirement, deterministic replacement-slot
+reuse, and the final persisted collection. Responsive checks cover the expanded
+desktop shell, collapsed tablet shell, and mobile drawer without introducing a
+separate product-data path.
 
 No service-role or secret key is used. The local project is disposable and must
 be stopped without a backup after verification.
