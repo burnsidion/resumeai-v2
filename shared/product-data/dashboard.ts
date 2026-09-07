@@ -1,13 +1,9 @@
 import { z } from 'zod'
 
-export const applicationStatusSchema = z.enum([
-  'draft',
-  'applied',
-  'interviewing',
-  'offer',
-  'rejected',
-  'withdrawn',
-])
+import { applicationStatusSchema } from '../applications/constraints'
+
+export { applicationStatusSchema }
+export type { ApplicationStatus } from '../applications/constraints'
 
 const countSchema = z.number().int().nonnegative()
 const timestampSchema = z.iso.datetime({ offset: true })
@@ -76,7 +72,6 @@ export const dashboardProductDataSchema = z
   })
   .strict()
 
-export type ApplicationStatus = z.infer<typeof applicationStatusSchema>
 export type DashboardApplicationSummary = z.infer<
   typeof dashboardApplicationSummarySchema
 >
