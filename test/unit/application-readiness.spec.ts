@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { deriveApplicationReadiness } from '../../server/domain/applications/readiness'
+import { deriveApplicationReadiness } from '../../shared/applications/readiness'
 
 describe('application tailoring readiness', () => {
   it.each([
