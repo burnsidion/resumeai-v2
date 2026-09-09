@@ -14,14 +14,20 @@ const guidance = computed(() =>
 )
 
 const emit = defineEmits<{
+  'create-requested': []
   'upload-requested': []
 }>()
 
 const requestGuidanceAction = (): void => {
-  if (
-    guidance.value?.action?.availability === 'available' &&
-    guidance.value.action.id === 'upload-base-resume'
-  ) {
+  const action = guidance.value?.action
+
+  if (action?.availability !== 'available') {
+    return
+  }
+
+  if (action.id === 'create-application') {
+    emit('create-requested')
+  } else if (action.id === 'upload-base-resume') {
     emit('upload-requested')
   }
 }

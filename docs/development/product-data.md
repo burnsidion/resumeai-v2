@@ -135,9 +135,17 @@ without revealing whether another user owns the row. Supabase provider details,
 database rows, ownership identifiers, storage keys, and hashes never cross the
 HTTP boundary.
 
-OWL-39 intentionally adds no browser composable or application page. Those
-consumer-facing concerns begin with the subsequent application workflow
-tickets.
+The OWL-40 creation workflow consumes those boundaries without bypassing them.
+`/applications/new` composes the existing active-resume read with one dedicated
+creation composable. The composable submits a normalized request once, accepts
+only a validated response that matches that request, and does not automatically
+retry an outcome whose persistence status is uncertain.
+
+After confirmed creation, the browser navigates to `/applications/:id`. The
+temporary confirmation view reloads that application through the existing
+owner-scoped detail endpoint, so refresh and direct navigation never depend on
+transient client state. Dashboard entry points may open creation, while the
+application list, full detail workspace, and editing remain deferred to OWL-41.
 
 ## Error boundary
 
@@ -182,6 +190,12 @@ full-capacity presentation, retry-safe retirement, deterministic replacement-slo
 reuse, and the final persisted collection. Responsive checks cover the expanded
 desktop shell, collapsed tablet shell, and mobile drawer without introducing a
 separate product-data path.
+
+Application workflow coverage also enters creation from the authenticated
+dashboard, submits a ready draft through the real browser and Nuxt server,
+confirms the owner-visible result, reloads it from persistence, and verifies that
+another authenticated owner receives the same neutral unavailable state without
+private application details.
 
 No service-role or secret key is used. The local project is disposable and must
 be stopped without a backup after verification.

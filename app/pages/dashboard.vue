@@ -23,6 +23,10 @@ const closeBaseResumeUpload = (): void => {
   uploadDialogOpen.value = false
 }
 
+const openApplicationCreation = async (): Promise<void> => {
+  await navigateTo('/applications/new')
+}
+
 const handleBaseResumeUploaded = async (): Promise<void> => {
   await refresh()
 }
@@ -47,17 +51,22 @@ const handleUploadRecovery = async (
 <template>
   <main class="min-h-dvh px-5 py-8 sm:px-8 xl:px-12 xl:py-10">
     <template v-if="dashboard">
-      <DashboardHeader :summary="dashboard.summary" />
+      <DashboardHeader
+        :summary="dashboard.summary"
+        @create-requested="openApplicationCreation"
+      />
 
       <div
         class="mt-10 grid items-stretch gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(20rem,1fr)]"
       >
         <DashboardReadyForReview
           :item="dashboard.attention"
+          @create-requested="openApplicationCreation"
           @upload-requested="openBaseResumeUpload"
         />
         <DashboardQuickActions
           :actions="dashboard.quickActions"
+          @create-requested="openApplicationCreation"
           @upload-requested="openBaseResumeUpload"
         />
         <DashboardRecentApplications

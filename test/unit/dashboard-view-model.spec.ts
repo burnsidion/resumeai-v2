@@ -99,6 +99,12 @@ describe('dashboard presentation mapper', () => {
     expect(viewModel.quickActions).toContainEqual(
       expect.objectContaining({
         availability: 'available',
+        id: 'create-application',
+      }),
+    )
+    expect(viewModel.quickActions).toContainEqual(
+      expect.objectContaining({
+        availability: 'available',
         id: 'upload-base-resume',
       }),
     )
@@ -174,7 +180,7 @@ describe('dashboard presentation mapper', () => {
     )
     expect(viewModel.attention).toMatchObject({
       action: {
-        availability: 'unavailable',
+        availability: 'available',
         id: 'create-application',
         label: 'Create application',
       },

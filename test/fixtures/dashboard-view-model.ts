@@ -47,7 +47,7 @@ export const populatedDashboardViewModel = {
   },
   quickActions: [
     {
-      availability: 'unavailable',
+      availability: 'available',
       description: 'Start when you are ready',
       icon: 'create',
       id: 'create-application',
@@ -137,7 +137,7 @@ export const emptyDashboardViewModel = {
   },
   quickActions: [
     {
-      availability: 'unavailable',
+      availability: 'available',
       description: 'Start when you are ready',
       icon: 'create',
       id: 'create-application',

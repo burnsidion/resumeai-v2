@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { DeepReadonly } from 'vue'
+
 import ApplicationBaseResumeSelector from './ApplicationBaseResumeSelector.vue'
 import ApplicationFormField from './ApplicationFormField.vue'
 import ApplicationReadinessPanel from './ApplicationReadinessPanel.vue'
@@ -36,7 +38,7 @@ type ApplicationCreationField =
 const props = defineProps<{
   baseResumes: ReadonlyArray<BaseResumeManagementItemViewModel>
   baseResumesStatus: 'error' | 'pending' | 'success'
-  creationState: ApplicationCreationState
+  creationState: DeepReadonly<ApplicationCreationState>
   submit(
     input: CreateApplicationRequest,
   ): Promise<ApplicationDetailViewModel | null>

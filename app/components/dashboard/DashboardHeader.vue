@@ -4,6 +4,10 @@ import type { DashboardSummaryViewModel } from '~~/shared/dashboard/view-model'
 defineProps<{
   summary: DashboardSummaryViewModel
 }>()
+
+const emit = defineEmits<{
+  'create-requested': []
+}>()
 </script>
 
 <template>
@@ -41,9 +45,8 @@ defineProps<{
 
     <button
       type="button"
-      disabled
-      class="bg-accent text-canvas inline-flex min-h-12 shrink-0 cursor-not-allowed items-center justify-center gap-2 rounded-xl px-6 text-sm font-semibold opacity-60"
-      title="Application creation is not available in this checkpoint"
+      class="bg-accent text-canvas focus-visible:outline-focus inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-xl px-6 text-sm font-semibold transition-opacity hover:opacity-90"
+      @click="emit('create-requested')"
     >
       <span class="text-xl leading-none" aria-hidden="true">+</span>
       Create application
