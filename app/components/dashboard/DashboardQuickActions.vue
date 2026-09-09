@@ -6,14 +6,18 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
+  'create-requested': []
   'upload-requested': []
 }>()
 
 const requestAction = (action: DashboardQuickActionViewModel): void => {
-  if (
-    action.availability === 'available' &&
-    action.id === 'upload-base-resume'
-  ) {
+  if (action.availability !== 'available') {
+    return
+  }
+
+  if (action.id === 'create-application') {
+    emit('create-requested')
+  } else if (action.id === 'upload-base-resume') {
     emit('upload-requested')
   }
 }

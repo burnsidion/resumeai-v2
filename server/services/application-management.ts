@@ -4,7 +4,7 @@ import {
   type CreateApplicationRequest,
   type UpdateApplicationRequest,
 } from '../../shared/applications/management'
-import { deriveApplicationReadiness } from '../domain/applications/readiness'
+import { deriveApplicationReadiness } from '../../shared/applications/readiness'
 import {
   createApplicationManagementRepository,
   type ApplicationManagementRepository,

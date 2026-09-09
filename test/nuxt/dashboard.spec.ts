@@ -13,17 +13,21 @@ import {
   populatedDashboardViewModel,
 } from '../fixtures/dashboard-view-model'
 
-const { refreshMock, useDashboardMock } = vi.hoisted(() => ({
+const { navigateToMock, refreshMock, useDashboardMock } = vi.hoisted(() => ({
+  navigateToMock: vi.fn(),
   refreshMock: vi.fn(),
   useDashboardMock: vi.fn(),
 }))
 
 mockNuxtImport('useDashboard', () => useDashboardMock)
+mockNuxtImport('navigateTo', () => navigateToMock)
 
 describe('dashboard', () => {
   beforeEach(() => {
     refreshMock.mockReset()
     refreshMock.mockResolvedValue(undefined)
+    navigateToMock.mockReset()
+    navigateToMock.mockResolvedValue(undefined)
     useDashboardMock.mockReset()
     useDashboardMock.mockReturnValue({
       data: ref(populatedDashboardViewModel),
@@ -68,7 +72,7 @@ describe('dashboard', () => {
     expect(wrapper.text()).toContain('Slot 2')
   })
 
-  it('enables only the upload quick action while capacity remains', async () => {
+  it('enables application creation and upload while later application navigation remains unavailable', async () => {
     const wrapper = await mountSuspended(DashboardPage)
     const quickActions = wrapper.get(
       '[aria-labelledby="quick-actions-heading"]',
@@ -77,9 +81,9 @@ describe('dashboard', () => {
     const findQuickAction = (label: string) =>
       quickActionButtons.find((button) => button.text().includes(label))
 
-    expect(findQuickAction('Create application')?.attributes()).toHaveProperty(
-      'disabled',
-    )
+    expect(
+      findQuickAction('Create application')?.attributes(),
+    ).not.toHaveProperty('disabled')
     expect(
       findQuickAction('Upload base resume')?.attributes(),
     ).not.toHaveProperty('disabled')
@@ -91,6 +95,22 @@ describe('dashboard', () => {
     ).toEqual(
       expect.arrayContaining(['Review working copy', 'Open application']),
     )
+  })
+
+  it('opens application creation from the header and quick action', async () => {
+    const wrapper = await mountSuspended(DashboardPage)
+    const createButtons = wrapper
+      .findAll('button')
+      .filter((button) => button.text().includes('Create application'))
+
+    expect(createButtons).toHaveLength(2)
+
+    await createButtons[0]?.trigger('click')
+    await createButtons[1]?.trigger('click')
+
+    expect(navigateToMock).toHaveBeenCalledTimes(2)
+    expect(navigateToMock).toHaveBeenNthCalledWith(1, '/applications/new')
+    expect(navigateToMock).toHaveBeenNthCalledWith(2, '/applications/new')
   })
 
   it('renders zero product data as helpful empty guidance', async () => {
@@ -154,6 +174,42 @@ describe('dashboard', () => {
     await guidance.get('button').trigger('click')
 
     expect(wrapper.findAll('[role="dialog"]')).toHaveLength(1)
+  })
+
+  it('opens application creation from first-application guidance', async () => {
+    const firstApplicationDashboard = dashboardViewModelSchema.parse({
+      ...populatedDashboardViewModel,
+      attention: {
+        action: {
+          availability: 'available',
+          id: 'create-application',
+          label: 'Create application',
+        },
+        description:
+          'Applications keep each role, status, and submitted resume together.',
+        eyebrow: 'Next step',
+        kind: 'guidance',
+        title: 'Create your first application',
+      },
+      recentApplications: {
+        emptyMessage: 'No applications have been created yet.',
+        items: [],
+      },
+    })
+    useDashboardMock.mockReturnValue({
+      data: ref(firstApplicationDashboard),
+      refresh: refreshMock,
+      status: ref('success'),
+    })
+
+    const wrapper = await mountSuspended(DashboardPage)
+    const guidance = wrapper.get(
+      '[aria-labelledby="dashboard-attention-heading"]',
+    )
+
+    await guidance.get('button').trigger('click')
+
+    expect(navigateToMock).toHaveBeenCalledWith('/applications/new')
   })
 
   it('refreshes dashboard product data after a confirmed upload', async () => {

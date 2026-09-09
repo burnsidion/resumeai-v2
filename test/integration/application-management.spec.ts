@@ -232,6 +232,8 @@ test('manages only the authenticated owner applications through the Nuxt server'
     code: 'authentication-required',
     status: 401,
   })
+  await page.goto('/applications/new')
+  await expect(page).toHaveURL(/\/sign-in\?next=\/applications\/new$/)
 
   const ownerOne = await createAuthenticatedTestUser(context, page, 'owner-one')
   const ownerOneResumeId = await createBaseResumeFixture(
@@ -335,6 +337,15 @@ test('manages only the authenticated owner applications through the Nuxt server'
         status: 404,
       },
     )
+    await ownerTwoPage.goto(`/applications/${ownerOneApplication.id}`, {
+      waitUntil: 'networkidle',
+    })
+    await expect(
+      ownerTwoPage.getByRole('heading', {
+        name: 'We couldn’t load this application',
+      }),
+    ).toBeVisible()
+    await expect(ownerTwoPage.getByText('Northstar Labs')).toHaveCount(0)
     await expectEndpointFailure(
       await updateApplication(ownerTwoContext.request, ownerOneApplication.id, {
         company: 'Cross-owner mutation',
@@ -403,6 +414,57 @@ test('manages only the authenticated owner applications through the Nuxt server'
       },
       status: 'applied',
     })
+
+    await page.goto('/dashboard', { waitUntil: 'networkidle' })
+    await page
+      .getByRole('button', { exact: true, name: 'Create application' })
+      .first()
+      .click()
+    await expect(page).toHaveURL(/\/applications\/new$/)
+
+    await page.getByLabel('Company').fill('  Aurora Works  ')
+    await page.getByLabel('Role').fill('  Product Engineer  ')
+    await page
+      .getByLabel('Job description')
+      .fill('  Build an accessible Vue application.  ')
+    await page.getByRole('radio', { name: /Owner One Resume\.pdf/ }).check()
+    await expect(
+      page.getByRole('heading', { name: 'Ready after saving' }),
+    ).toBeVisible()
+
+    await page
+      .getByRole('button', { exact: true, name: 'Create application' })
+      .click()
+    await expect(page).toHaveURL(/\/applications\/[0-9a-f-]+$/)
+    await expect(
+      page.getByRole('heading', { name: 'Product Engineer' }),
+    ).toBeVisible()
+    await expect(page.getByText('Aurora Works')).toBeVisible()
+    await expect(page.getByText('Ready for tailoring')).toBeVisible()
+    await expect(page.getByText('Owner One Resume.pdf')).toBeVisible()
+    await expect(page.getByText('Tailoring has not started')).toBeVisible()
+
+    const createdApplicationId = new URL(page.url()).pathname.split('/').at(-1)
+
+    expect(createdApplicationId).toMatch(/^[0-9a-f-]{36}$/)
+    await page.reload({ waitUntil: 'networkidle' })
+    await expect(
+      page.getByRole('heading', { name: 'Product Engineer' }),
+    ).toBeVisible()
+
+    const persistedListResponse = await context.request.get(applicationsUrl)
+    const persistedList = applicationListViewModelSchema.parse(
+      await persistedListResponse.json(),
+    )
+
+    expect(persistedList.applications).toContainEqual(
+      expect.objectContaining({
+        company: 'Aurora Works',
+        id: createdApplicationId,
+        role: 'Product Engineer',
+        status: 'draft',
+      }),
+    )
 
     const ownerTwoListResponse =
       await ownerTwoContext.request.get(applicationsUrl)

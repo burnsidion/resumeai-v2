@@ -100,7 +100,7 @@ const createAttentionViewModel = (
   if (productData.recentApplications.length === 0) {
     return {
       action: {
-        availability: 'unavailable',
+        availability: 'available',
         id: 'create-application',
         label: 'Create application',
       },
@@ -141,7 +141,7 @@ const createQuickActions = (
   productData: DashboardProductData,
 ): ReadonlyArray<DashboardQuickActionViewModel> => [
   {
-    availability: 'unavailable',
+    availability: 'available',
     description: 'Start when you are ready',
     icon: 'create',
     id: 'create-application',

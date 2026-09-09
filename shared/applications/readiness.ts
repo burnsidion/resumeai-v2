@@ -2,7 +2,7 @@ import {
   applicationReadinessSchema,
   type ApplicationReadiness,
   type ApplicationReadinessRequirement,
-} from '../../../shared/applications/management'
+} from './management'
 
 export interface ApplicationReadinessInput {
   jobDescription: string | null
