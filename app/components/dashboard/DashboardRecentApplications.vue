@@ -26,10 +26,12 @@ const statusClasses = {
       >
         Recent applications
       </h2>
-      <span class="text-accent/60 text-sm font-medium" aria-disabled="true">
+      <NuxtLink
+        to="/applications"
+        class="text-accent hover:text-accent/80 focus-visible:outline-focus rounded-md text-sm font-medium transition-colors"
+      >
         View all
-        <span class="sr-only">Not available yet</span>
-      </span>
+      </NuxtLink>
     </div>
 
     <ul v-if="applications.items.length > 0" class="mt-5 space-y-2">

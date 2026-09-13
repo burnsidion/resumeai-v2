@@ -130,7 +130,7 @@ describe('application creation page', () => {
     )
   })
 
-  it('returns to the dashboard from cancellation and uncertain-save recovery', async () => {
+  it('returns to applications from cancellation while preserving uncertain-save recovery', async () => {
     const wrapper = await mountSuspended(ApplicationCreationPage)
     const form = wrapper.getComponent(ApplicationCreationForm)
 
@@ -139,7 +139,7 @@ describe('application creation page', () => {
     await flushPromises()
 
     expect(mocks.navigateTo).toHaveBeenCalledTimes(2)
-    expect(mocks.navigateTo).toHaveBeenNthCalledWith(1, '/dashboard')
+    expect(mocks.navigateTo).toHaveBeenNthCalledWith(1, '/applications')
     expect(mocks.navigateTo).toHaveBeenNthCalledWith(2, '/dashboard')
   })
 

@@ -90,10 +90,16 @@ describe('authenticated shell', () => {
         'nav[aria-label="Primary navigation"] a[href="/base-resumes"]',
       ),
     ).toBeTruthy()
-    expect(desktop.findAll('[aria-disabled="true"]')).toHaveLength(3)
+    expect(
+      desktop.get(
+        'nav[aria-label="Primary navigation"] a[href="/applications"]',
+      ),
+    ).toBeTruthy()
+    expect(desktop.findAll('[aria-disabled="true"]')).toHaveLength(2)
     expect(
       collapsed.get('a[aria-label="Dashboard"]').attributes('aria-current'),
     ).toBe('page')
+    expect(collapsed.get('a[aria-label="Applications"]')).toBeTruthy()
     expect(collapsed.get('a[aria-label="Base resumes"]')).toBeTruthy()
 
     await wrapper.get('button[aria-label="Open navigation"]').trigger('click')
@@ -107,9 +113,46 @@ describe('authenticated shell', () => {
     ).toBe('page')
     expect(
       mobile.get(
+        'nav[aria-label="Mobile primary navigation"] a[href="/applications"]',
+      ),
+    ).toBeTruthy()
+    expect(
+      mobile.get(
         'nav[aria-label="Mobile primary navigation"] a[href="/base-resumes"]',
       ),
     ).toBeTruthy()
+  })
+
+  it('marks Applications as current throughout its nested route workspace', async () => {
+    useRouteMock.mockReturnValue({
+      path: '/applications/4120cbac-ebf4-4580-8988-3fbc65ca9449',
+    })
+    const wrapper = await mountNavigation()
+
+    expect(
+      wrapper
+        .get(
+          '[aria-label="Authenticated application sidebar"] a[href="/applications"]',
+        )
+        .attributes('aria-current'),
+    ).toBe('page')
+    expect(
+      wrapper
+        .get(
+          '[aria-label="Collapsed authenticated navigation"] a[href="/applications"]',
+        )
+        .attributes('aria-current'),
+    ).toBe('page')
+
+    await wrapper.get('button[aria-label="Open navigation"]').trigger('click')
+
+    expect(
+      wrapper
+        .get(
+          'nav[aria-label="Mobile primary navigation"] a[href="/applications"]',
+        )
+        .attributes('aria-current'),
+    ).toBe('page')
   })
 
   it('marks Base Resumes as current in every navigation presentation', async () => {

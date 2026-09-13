@@ -77,6 +77,10 @@ describe('application confirmation page', () => {
     expect(wrapper.text()).toContain('Tailoring has not started')
     expect(wrapper.text()).not.toContain('Edit details')
     expect(wrapper.findAll('button')).toHaveLength(1)
+
+    await wrapper.get('button').trigger('click')
+
+    expect(mocks.navigateTo).toHaveBeenCalledWith('/applications')
   })
 
   it('renders a restrained loading state', async () => {
@@ -113,6 +117,6 @@ describe('application confirmation page', () => {
     await buttons[1]?.trigger('click')
 
     expect(mocks.refresh).toHaveBeenCalledOnce()
-    expect(mocks.navigateTo).toHaveBeenCalledWith('/dashboard')
+    expect(mocks.navigateTo).toHaveBeenCalledWith('/applications')
   })
 })

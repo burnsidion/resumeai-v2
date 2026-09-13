@@ -72,7 +72,7 @@ describe('dashboard', () => {
     expect(wrapper.text()).toContain('Slot 2')
   })
 
-  it('enables application creation and upload while later application navigation remains unavailable', async () => {
+  it('enables the available dashboard actions while preserving later disabled actions', async () => {
     const wrapper = await mountSuspended(DashboardPage)
     const quickActions = wrapper.get(
       '[aria-labelledby="quick-actions-heading"]',
@@ -87,14 +87,34 @@ describe('dashboard', () => {
     expect(
       findQuickAction('Upload base resume')?.attributes(),
     ).not.toHaveProperty('disabled')
-    expect(findQuickAction('View applications')?.attributes()).toHaveProperty(
-      'disabled',
-    )
+    expect(
+      findQuickAction('View applications')?.attributes(),
+    ).not.toHaveProperty('disabled')
     expect(
       wrapper.findAll('button:disabled').map((button) => button.text()),
     ).toEqual(
       expect.arrayContaining(['Review working copy', 'Open application']),
     )
+  })
+
+  it('opens the applications list from the quick action and recent-applications header', async () => {
+    const wrapper = await mountSuspended(DashboardPage)
+    const quickActions = wrapper.get(
+      '[aria-labelledby="quick-actions-heading"]',
+    )
+    const viewApplications = quickActions
+      .findAll('button')
+      .find((button) => button.text().includes('View applications'))
+
+    await viewApplications?.trigger('click')
+
+    expect(navigateToMock).toHaveBeenCalledWith('/applications')
+    expect(
+      wrapper
+        .get('[aria-labelledby="recent-applications-heading"]')
+        .get('a')
+        .attributes('href'),
+    ).toBe('/applications')
   })
 
   it('opens application creation from the header and quick action', async () => {

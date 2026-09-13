@@ -45,7 +45,7 @@ const createApplication = (
   creation.create(input).then(navigateToCreatedApplication)
 
 const cancelCreation = async (): Promise<void> => {
-  await navigateTo('/dashboard')
+  await navigateTo('/applications')
 }
 
 const handleCreationRecovery = async (
@@ -91,7 +91,7 @@ const handleCreationRecovery = async (
       >
         <path d="m15 18-6-6 6-6" />
       </svg>
-      Dashboard
+      Applications
     </button>
 
     <header
