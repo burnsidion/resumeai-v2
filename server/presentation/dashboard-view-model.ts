@@ -162,7 +162,7 @@ const createQuickActions = (
     label: 'Upload base resume',
   },
   {
-    availability: 'unavailable',
+    availability: 'available',
     description:
       productData.recentApplications.length === 0
         ? 'No applications yet'

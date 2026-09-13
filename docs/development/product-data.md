@@ -144,8 +144,23 @@ retry an outcome whose persistence status is uncertain.
 After confirmed creation, the browser navigates to `/applications/:id`. The
 temporary confirmation view reloads that application through the existing
 owner-scoped detail endpoint, so refresh and direct navigation never depend on
-transient client state. Dashboard entry points may open creation, while the
-application list, full detail workspace, and editing remain deferred to OWL-41.
+transient client state.
+
+OWL-41 renders the authenticated `/applications` workspace from the existing
+owner-scoped collection endpoint. `useApplications` owns the relative request
+and validates the response against the strict list view-model schema. The page
+owns loading, recoverable failure, retry, and navigation; list components own
+only populated and empty presentation. Each application summary is one
+accessible link to `/applications/:id`, and no persistence detail or Supabase
+client enters the browser component boundary.
+
+The existing authenticated shell exposes Applications consistently through its
+expanded, collapsed, and mobile presentations. Dashboard quick actions and the
+Recent Applications header use the same list destination. Normal creation
+cancellation and confirmation exits return to `/applications`; the uncertain
+creation outcome still returns to the dashboard so the user can inspect their
+broader trusted state. The full application detail and editing workspace remain
+deferred to OWL-42.
 
 ## Error boundary
 
@@ -191,11 +206,13 @@ reuse, and the final persisted collection. Responsive checks cover the expanded
 desktop shell, collapsed tablet shell, and mobile drawer without introducing a
 separate product-data path.
 
-Application workflow coverage also enters creation from the authenticated
-dashboard, submits a ready draft through the real browser and Nuxt server,
-confirms the owner-visible result, reloads it from persistence, and verifies that
-another authenticated owner receives the same neutral unavailable state without
-private application details.
+Application workflow coverage also verifies the protected list redirect, valid
+empty state, entry from the authenticated dashboard, and recent-first rendering
+after creating a ready draft through the real browser and Nuxt server. It opens
+the saved application through the complete-row link, confirms list navigation
+through expanded, collapsed, and mobile shells without horizontal overflow, and
+verifies that another authenticated owner receives the same neutral unavailable
+state without private application details.
 
 No service-role or secret key is used. The local project is disposable and must
 be stopped without a backup after verification.

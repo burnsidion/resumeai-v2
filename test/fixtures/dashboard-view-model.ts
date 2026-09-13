@@ -61,7 +61,7 @@ export const populatedDashboardViewModel = {
       label: 'Upload base resume',
     },
     {
-      availability: 'unavailable',
+      availability: 'available',
       description: 'Return to recent work',
       icon: 'applications',
       id: 'view-applications',
@@ -151,7 +151,7 @@ export const emptyDashboardViewModel = {
       label: 'Upload base resume',
     },
     {
-      availability: 'unavailable',
+      availability: 'available',
       description: 'No applications yet',
       icon: 'applications',
       id: 'view-applications',

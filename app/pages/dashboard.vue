@@ -27,6 +27,10 @@ const openApplicationCreation = async (): Promise<void> => {
   await navigateTo('/applications/new')
 }
 
+const openApplications = async (): Promise<void> => {
+  await navigateTo('/applications')
+}
+
 const handleBaseResumeUploaded = async (): Promise<void> => {
   await refresh()
 }
@@ -68,6 +72,7 @@ const handleUploadRecovery = async (
           :actions="dashboard.quickActions"
           @create-requested="openApplicationCreation"
           @upload-requested="openBaseResumeUpload"
+          @view-requested="openApplications"
         />
         <DashboardRecentApplications
           :applications="dashboard.recentApplications"

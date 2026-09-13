@@ -99,9 +99,9 @@ const retryApplication = async (): Promise<void> => {
       <button
         type="button"
         class="bg-accent text-canvas focus-visible:outline-focus mt-8 min-h-11 rounded-xl px-5 text-sm font-semibold transition-opacity hover:opacity-90"
-        @click="navigateTo('/dashboard')"
+        @click="navigateTo('/applications')"
       >
-        Back to dashboard
+        Back to applications
       </button>
     </section>
 
@@ -135,9 +135,9 @@ const retryApplication = async (): Promise<void> => {
         <button
           type="button"
           class="border-line bg-panel hover:bg-raised focus-visible:outline-focus min-h-11 rounded-xl border px-5 text-sm font-semibold transition-colors"
-          @click="navigateTo('/dashboard')"
+          @click="navigateTo('/applications')"
         >
-          Back to dashboard
+          Back to applications
         </button>
       </div>
     </section>

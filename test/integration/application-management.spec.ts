@@ -223,6 +223,18 @@ const expectEndpointFailure = async (
   })
 }
 
+const expectNoHorizontalOverflow = async (page: Page): Promise<void> => {
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.documentElement.scrollWidth -
+          document.documentElement.clientWidth,
+      ),
+    )
+    .toBeLessThanOrEqual(1)
+}
+
 test('manages only the authenticated owner applications through the Nuxt server', async ({
   browser,
   context,
@@ -232,6 +244,8 @@ test('manages only the authenticated owner applications through the Nuxt server'
     code: 'authentication-required',
     status: 401,
   })
+  await page.goto('/applications')
+  await expect(page).toHaveURL(/\/sign-in\?next=\/applications$/)
   await page.goto('/applications/new')
   await expect(page).toHaveURL(/\/sign-in\?next=\/applications\/new$/)
 
@@ -241,6 +255,22 @@ test('manages only the authenticated owner applications through the Nuxt server'
     'Owner One',
     'a',
   )
+
+  await page.goto('/applications', { waitUntil: 'networkidle' })
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Applications' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Create your first application' }),
+  ).toBeVisible()
+  await expect(
+    page
+      .getByRole('complementary', {
+        name: 'Authenticated application sidebar',
+      })
+      .getByRole('link', { name: 'Applications' }),
+  ).toHaveAttribute('aria-current', 'page')
+
   const ownerTwoContext = await browser.newContext()
   const ownerTwoPage = await ownerTwoContext.newPage()
 
@@ -451,6 +481,93 @@ test('manages only the authenticated owner applications through the Nuxt server'
     await expect(
       page.getByRole('heading', { name: 'Product Engineer' }),
     ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Back to applications' }).click()
+    await expect(page).toHaveURL(/\/applications$/)
+
+    const applicationList = page.getByRole('region', {
+      name: 'Your applications',
+    })
+    const applicationLinks = applicationList.getByRole('link', {
+      name: /^Open /,
+    })
+
+    await expect(applicationLinks).toHaveCount(2)
+    await expect(applicationLinks.nth(0)).toHaveAttribute(
+      'aria-label',
+      'Open Product Engineer at Aurora Works',
+    )
+    await expect(applicationLinks.nth(1)).toHaveAttribute(
+      'aria-label',
+      'Open Senior Frontend Engineer at Northstar Labs, Inc.',
+    )
+    await expect(applicationList.getByText('Ready for tailoring')).toHaveCount(
+      2,
+    )
+
+    await applicationLinks.nth(0).click()
+    await expect(page).toHaveURL(
+      new RegExp(`/applications/${createdApplicationId}$`),
+    )
+    await expect(
+      page.getByRole('heading', { name: 'Product Engineer' }),
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Back to applications' }).click()
+    await expect(page).toHaveURL(/\/applications$/)
+
+    await page.goto('/dashboard', { waitUntil: 'networkidle' })
+    await page.getByRole('button', { name: /View applications/ }).click()
+    await expect(page).toHaveURL(/\/applications$/)
+
+    await page.setViewportSize({ height: 1000, width: 1440 })
+    const expandedNavigation = page.getByRole('complementary', {
+      name: 'Authenticated application sidebar',
+    })
+
+    await expect(expandedNavigation).toBeVisible()
+    await expect(
+      expandedNavigation.getByRole('link', { name: 'Applications' }),
+    ).toHaveAttribute('aria-current', 'page')
+    await expectNoHorizontalOverflow(page)
+
+    await page.setViewportSize({ height: 900, width: 1024 })
+
+    const collapsedNavigation = page.getByRole('complementary', {
+      name: 'Collapsed authenticated navigation',
+    })
+
+    await expect(expandedNavigation).toBeHidden()
+    await expect(collapsedNavigation).toBeVisible()
+    await expect(
+      collapsedNavigation.getByRole('link', { name: 'Applications' }),
+    ).toHaveAttribute('aria-current', 'page')
+    await expectNoHorizontalOverflow(page)
+
+    await page.setViewportSize({ height: 844, width: 390 })
+    await expect(collapsedNavigation).toBeHidden()
+    await expectNoHorizontalOverflow(page)
+
+    const mobileMenuButton = page.getByRole('button', {
+      name: 'Open navigation',
+    })
+
+    await mobileMenuButton.click()
+
+    let mobileNavigation = page.getByRole('dialog', { name: 'Navigation' })
+
+    await expect(
+      mobileNavigation.getByRole('link', { name: 'Applications' }),
+    ).toHaveAttribute('aria-current', 'page')
+    await mobileNavigation.getByRole('link', { name: 'Dashboard' }).click()
+    await expect(page).toHaveURL(/\/dashboard$/)
+    await expect(mobileNavigation).toBeHidden()
+
+    await mobileMenuButton.click()
+    mobileNavigation = page.getByRole('dialog', { name: 'Navigation' })
+    await mobileNavigation.getByRole('link', { name: 'Applications' }).click()
+    await expect(page).toHaveURL(/\/applications$/)
+    await expect(mobileNavigation).toBeHidden()
+    await expectNoHorizontalOverflow(page)
 
     const persistedListResponse = await context.request.get(applicationsUrl)
     const persistedList = applicationListViewModelSchema.parse(

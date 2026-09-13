@@ -108,6 +108,12 @@ describe('dashboard presentation mapper', () => {
         id: 'upload-base-resume',
       }),
     )
+    expect(viewModel.quickActions).toContainEqual(
+      expect.objectContaining({
+        availability: 'available',
+        id: 'view-applications',
+      }),
+    )
     expect(viewModel).not.toHaveProperty('followUp')
   })
 

@@ -31,6 +31,7 @@ const primaryNavigation = [
   {
     icon: 'applications',
     label: 'Applications',
+    to: '/applications',
   },
   {
     icon: 'resume',
@@ -229,7 +230,6 @@ onBeforeUnmount(() => {
           <ul class="space-y-1.5">
             <li v-for="item in primaryNavigation" :key="item.label">
               <NuxtLink
-                v-if="'to' in item"
                 :to="item.to"
                 :aria-current="isCurrentRoute(item.to) ? 'page' : undefined"
                 class="text-muted hover:bg-raised hover:text-foreground focus-visible:outline-focus flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors"
@@ -241,17 +241,6 @@ onBeforeUnmount(() => {
                 <ShellNavigationIcon :icon="item.icon" />
                 <span>{{ item.label }}</span>
               </NuxtLink>
-
-              <div
-                v-else
-                aria-disabled="true"
-                class="text-muted/60 flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-medium"
-                title="This destination is not available yet"
-              >
-                <ShellNavigationIcon :icon="item.icon" />
-                <span>{{ item.label }}</span>
-                <span class="sr-only">Not available yet</span>
-              </div>
             </li>
           </ul>
         </nav>
@@ -292,7 +281,6 @@ onBeforeUnmount(() => {
         <ul class="space-y-2">
           <li v-for="item in primaryNavigation" :key="item.label">
             <NuxtLink
-              v-if="'to' in item"
               :to="item.to"
               :aria-label="item.label"
               :title="item.label"
@@ -310,16 +298,6 @@ onBeforeUnmount(() => {
               />
               <ShellNavigationIcon :icon="item.icon" />
             </NuxtLink>
-
-            <div
-              v-else
-              :aria-label="`${item.label}, not available yet`"
-              aria-disabled="true"
-              :title="`${item.label} · Not available yet`"
-              class="text-muted/45 grid min-h-12 place-items-center rounded-xl"
-            >
-              <ShellNavigationIcon :icon="item.icon" />
-            </div>
           </li>
         </ul>
       </nav>
@@ -449,7 +427,6 @@ onBeforeUnmount(() => {
             <ul class="space-y-1.5">
               <li v-for="item in primaryNavigation" :key="item.label">
                 <NuxtLink
-                  v-if="'to' in item"
                   :to="item.to"
                   :aria-current="isCurrentRoute(item.to) ? 'page' : undefined"
                   class="text-muted hover:bg-raised hover:text-foreground focus-visible:outline-focus flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-medium transition-colors"
@@ -461,16 +438,6 @@ onBeforeUnmount(() => {
                   <ShellNavigationIcon :icon="item.icon" />
                   <span>{{ item.label }}</span>
                 </NuxtLink>
-
-                <div
-                  v-else
-                  aria-disabled="true"
-                  class="text-muted/50 flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-medium"
-                >
-                  <ShellNavigationIcon :icon="item.icon" />
-                  <span>{{ item.label }}</span>
-                  <span class="sr-only">Not available yet</span>
-                </div>
               </li>
             </ul>
           </nav>
