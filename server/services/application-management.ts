@@ -19,6 +19,7 @@ import {
 import type { ProductDataRepositoryContext } from '../repositories/product-data/context'
 
 export type ApplicationManagementServiceErrorKind =
+  | 'application-update-conflict'
   | 'application-unavailable'
   | 'inconsistent-state'
   | 'persistence-unavailable'
@@ -38,6 +39,7 @@ export interface ApplicationManagementServiceDependencies {
 export class ApplicationManagementServiceError extends Error {
   readonly code:
     | 'application-management-unavailable'
+    | 'application-update-conflict'
     | 'application-unavailable'
     | 'selected-base-resume-unavailable'
 
@@ -46,22 +48,27 @@ export class ApplicationManagementServiceError extends Error {
     cause?: unknown,
   ) {
     const applicationUnavailable = kind === 'application-unavailable'
+    const applicationUpdateConflict = kind === 'application-update-conflict'
     const resumeUnavailable = kind === 'selected-base-resume-unavailable'
 
     super(
       applicationUnavailable
         ? 'The application is unavailable.'
-        : resumeUnavailable
-          ? 'The selected base resume is unavailable.'
-          : 'Application management is temporarily unavailable.',
+        : applicationUpdateConflict
+          ? 'The application changed before this update could be saved.'
+          : resumeUnavailable
+            ? 'The selected base resume is unavailable.'
+            : 'Application management is temporarily unavailable.',
       { cause },
     )
     this.name = 'ApplicationManagementServiceError'
     this.code = applicationUnavailable
       ? 'application-unavailable'
-      : resumeUnavailable
-        ? 'selected-base-resume-unavailable'
-        : 'application-management-unavailable'
+      : applicationUpdateConflict
+        ? 'application-update-conflict'
+        : resumeUnavailable
+          ? 'selected-base-resume-unavailable'
+          : 'application-management-unavailable'
   }
 }
 
@@ -311,6 +318,10 @@ export async function updateApplication(
     throw createServiceError('application-unavailable')
   }
 
+  if (Date.parse(existing.updatedAt) !== Date.parse(input.expectedUpdatedAt)) {
+    throw createServiceError('application-update-conflict')
+  }
+
   if (
     input.selectedBaseResumeId !== undefined &&
     input.selectedBaseResumeId !== null &&
@@ -325,7 +336,7 @@ export async function updateApplication(
 
   const timestamp = getCurrentTimestamp(dependencies)
 
-  if (Date.parse(timestamp) < Date.parse(existing.createdAt)) {
+  if (Date.parse(timestamp) <= Date.parse(existing.updatedAt)) {
     throw createServiceError('unexpected-failure')
   }
 
@@ -342,7 +353,7 @@ export async function updateApplication(
   }
 
   if (updated === null) {
-    throw createServiceError('application-unavailable')
+    throw createServiceError('application-update-conflict')
   }
 
   requireMatchingUpdatedApplication(updated, id, record)

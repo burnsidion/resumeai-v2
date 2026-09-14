@@ -262,6 +262,7 @@ describe('application management repository', () => {
     const update: UpdateApplicationRecord = {
       appliedOn: '2026-08-20',
       company: 'Updated Company',
+      expectedUpdatedAt: updatedAt,
       jobDescription: null,
       selectedBaseResumeId: null,
       status: 'applied',
@@ -298,6 +299,7 @@ describe('application management repository', () => {
     expect(request.init?.method).toBe('PATCH')
     expect(request.url.searchParams.get('user_id')).toBe(`eq.${userId}`)
     expect(request.url.searchParams.get('id')).toBe(`eq.${applicationId}`)
+    expect(request.url.searchParams.get('updated_at')).toBe(`eq.${updatedAt}`)
     expect(body).toEqual({
       applied_on: '2026-08-20',
       company: 'Updated Company',
@@ -315,7 +317,11 @@ describe('application management repository', () => {
     const repository = createApplicationManagementRepository({ client, userId })
 
     await expect(
-      repository.update(applicationId, { role: 'Staff Engineer', updatedAt }),
+      repository.update(applicationId, {
+        expectedUpdatedAt: createdAt,
+        role: 'Staff Engineer',
+        updatedAt,
+      }),
     ).resolves.toBeNull()
   })
 
@@ -338,7 +344,11 @@ describe('application management repository', () => {
     {
       operation: 'update-application',
       run: (repository) =>
-        repository.update(applicationId, { role: 'Staff Engineer', updatedAt }),
+        repository.update(applicationId, {
+          expectedUpdatedAt: createdAt,
+          role: 'Staff Engineer',
+          updatedAt,
+        }),
     },
   ])('sanitizes $operation provider failures', async ({ operation, run }) => {
     const { client } = createFakeClient(providerErrorResponse())

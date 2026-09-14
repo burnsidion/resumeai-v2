@@ -139,6 +139,7 @@ beforeEach(() => {
   mocks.loadApplication.mockResolvedValue(application)
   mocks.updateApplication.mockResolvedValue(application)
   mocks.readBody.mockResolvedValue({
+    expectedUpdatedAt: application.updatedAt,
     jobDescription: application.jobDescription,
     selectedBaseResumeId: baseResumeId,
   })
@@ -189,6 +190,7 @@ describe('application detail endpoints', () => {
 
     mocks.readBody.mockResolvedValue({
       company: `  ${application.company}  `,
+      expectedUpdatedAt: application.updatedAt,
       jobDescription: '   ',
       selectedBaseResumeId: null,
       status: 'applied',
@@ -206,6 +208,7 @@ describe('application detail endpoints', () => {
       applicationId,
       {
         company: application.company,
+        expectedUpdatedAt: application.updatedAt,
         jobDescription: null,
         selectedBaseResumeId: null,
         status: 'applied',
@@ -305,7 +308,10 @@ describe('application detail endpoints', () => {
     ['invalid status', { status: 'archived' }],
     ['server-owned field', { userId }],
   ])('rejects an update with %s', async (_name, body) => {
-    mocks.readBody.mockResolvedValue(body)
+    mocks.readBody.mockResolvedValue({
+      expectedUpdatedAt: application.updatedAt,
+      ...body,
+    })
 
     await expectEndpointFailure(
       () => applicationUpdateEndpoint(createEvent('PATCH')),
@@ -371,6 +377,22 @@ describe('application detail endpoints', () => {
         code: 'selected-base-resume-unavailable',
         statusCode: 409,
         statusMessage: 'The selected base resume is unavailable.',
+      },
+    )
+  })
+
+  it('maps a stale update to a sanitized conflict response', async () => {
+    mocks.updateApplication.mockRejectedValue(
+      new ApplicationManagementServiceError('application-update-conflict'),
+    )
+
+    await expectEndpointFailure(
+      () => applicationUpdateEndpoint(createEvent('PATCH')),
+      {
+        code: 'application-update-conflict',
+        statusCode: 409,
+        statusMessage:
+          'The application changed before this update could be saved.',
       },
     )
   })

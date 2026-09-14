@@ -124,6 +124,7 @@ const createEndpointFailure = ({
         retryable: false,
       }
     case 'application-save-unavailable':
+    case 'application-update-conflict':
     case 'application-unavailable':
     case 'applications-unavailable':
     case 'invalid-application-id':

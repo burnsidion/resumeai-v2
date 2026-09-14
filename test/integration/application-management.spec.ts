@@ -379,6 +379,7 @@ test('manages only the authenticated owner applications through the Nuxt server'
     await expectEndpointFailure(
       await updateApplication(ownerTwoContext.request, ownerOneApplication.id, {
         company: 'Cross-owner mutation',
+        expectedUpdatedAt: ownerOneApplication.updatedAt,
       }),
       {
         code: 'application-unavailable',
@@ -388,6 +389,7 @@ test('manages only the authenticated owner applications through the Nuxt server'
 
     await expectEndpointFailure(
       await updateApplication(context.request, ownerOneApplication.id, {
+        expectedUpdatedAt: ownerOneApplication.updatedAt,
         jobDescription: 'This must not be saved on failure.',
         selectedBaseResumeId: ownerTwoResumeId,
       }),
@@ -417,6 +419,7 @@ test('manages only the authenticated owner applications through the Nuxt server'
       {
         appliedOn: '2026-09-06',
         company: '  Northstar Labs, Inc.  ',
+        expectedUpdatedAt: ownerOneApplication.updatedAt,
         jobDescription: '  Build accessible product experiences.  ',
         selectedBaseResumeId: ownerOneResumeId,
         status: 'applied',
@@ -443,6 +446,29 @@ test('manages only the authenticated owner applications through the Nuxt server'
         isAvailable: true,
       },
       status: 'applied',
+    })
+
+    await expectEndpointFailure(
+      await updateApplication(context.request, ownerOneApplication.id, {
+        company: 'Stale overwrite attempt',
+        expectedUpdatedAt: ownerOneApplication.updatedAt,
+      }),
+      {
+        code: 'application-update-conflict',
+        status: 409,
+      },
+    )
+
+    const afterStaleUpdateResponse = await context.request.get(
+      applicationDetailUrl(ownerOneApplication.id),
+    )
+    const afterStaleUpdate = applicationDetailResponseSchema.parse(
+      await afterStaleUpdateResponse.json(),
+    ).application
+
+    expect(afterStaleUpdate).toMatchObject({
+      company: 'Northstar Labs, Inc.',
+      updatedAt: updatedApplication.updatedAt,
     })
 
     await page.goto('/dashboard', { waitUntil: 'networkidle' })

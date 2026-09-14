@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import type { BaseResumeManagementItemViewModel } from '~~/shared/base-resumes/view-model'
+import type { ApplicationDetailViewModel } from '~~/shared/applications/view-model'
+
+type CurrentBaseResumeSelection = NonNullable<
+  ApplicationDetailViewModel['selectedBaseResume']
+>
 
 const props = defineProps<{
+  currentSelection?: CurrentBaseResumeSelection | null
   disabled: boolean
   error?: string
   items: ReadonlyArray<BaseResumeManagementItemViewModel>
@@ -17,6 +23,20 @@ const emit = defineEmits<{
 const descriptionId = useId()
 const statusId = useId()
 const firstOption = useTemplateRef<HTMLInputElement>('firstOption')
+const preservedSelection = computed(() => {
+  const currentSelection = props.currentSelection
+
+  if (
+    currentSelection === null ||
+    currentSelection === undefined ||
+    currentSelection.id !== props.modelValue ||
+    props.items.some((resume) => resume.id === currentSelection.id)
+  ) {
+    return null
+  }
+
+  return currentSelection
+})
 
 const selectResume = (id: string | null): void => {
   if (!props.disabled) {
@@ -72,6 +92,46 @@ defineExpose({ focus })
             >
             <span class="text-muted mt-1 block text-[0.6875rem]">
               You can choose one later
+            </span>
+          </span>
+        </label>
+
+        <label
+          v-if="preservedSelection"
+          class="border-line bg-high/45 text-muted grid min-h-[4.25rem] cursor-not-allowed grid-cols-[1rem_2.25rem_minmax(0,1fr)] items-center gap-3 rounded-xl border p-3 opacity-80"
+          :class="
+            modelValue === preservedSelection.id
+              ? 'border-muted/45 bg-high/65'
+              : undefined
+          "
+        >
+          <input
+            type="radio"
+            name="application-base-resume"
+            :value="preservedSelection.id"
+            :checked="modelValue === preservedSelection.id"
+            disabled
+            class="accent-muted size-4"
+          />
+          <span
+            class="border-line bg-panel text-muted grid h-11 w-9 place-items-center rounded-lg border text-[0.5625rem] font-extrabold tracking-[0.08em]"
+            aria-hidden="true"
+          >
+            PDF
+          </span>
+          <span class="min-w-0">
+            <strong
+              class="text-foreground block truncate text-xs font-semibold"
+            >
+              {{ preservedSelection.filename }}
+            </strong>
+            <span class="mt-1 block truncate text-[0.6875rem]">
+              <template v-if="preservedSelection.isAvailable">
+                Current selection · Active when loaded
+              </template>
+              <template v-else>
+                Unavailable · Preserved for this application
+              </template>
             </span>
           </span>
         </label>

@@ -360,6 +360,7 @@ describe('update application use case', () => {
         context,
         applicationId,
         {
+          expectedUpdatedAt: updatedAt,
           jobDescription: 'Updated job description.',
           selectedBaseResumeId: otherBaseResumeId,
         },
@@ -376,6 +377,7 @@ describe('update application use case', () => {
     )
     expect(dependencies.now).toHaveBeenCalledOnce()
     expect(applicationRepository.update).toHaveBeenCalledWith(applicationId, {
+      expectedUpdatedAt: updatedAt,
       jobDescription: 'Updated job description.',
       selectedBaseResumeId: otherBaseResumeId,
       updatedAt: nextUpdatedAt,
@@ -411,7 +413,11 @@ describe('update application use case', () => {
       updateApplication(
         context,
         applicationId,
-        { selectedBaseResumeId: baseResumeId, status: 'withdrawn' },
+        {
+          expectedUpdatedAt: retiredAt,
+          selectedBaseResumeId: baseResumeId,
+          status: 'withdrawn',
+        },
         dependencies,
       ),
     ).resolves.toMatchObject({
@@ -444,7 +450,7 @@ describe('update application use case', () => {
       updateApplication(
         context,
         applicationId,
-        { selectedBaseResumeId: null },
+        { expectedUpdatedAt: updatedAt, selectedBaseResumeId: null },
         dependencies,
       ),
     ).resolves.toMatchObject({
@@ -467,7 +473,7 @@ describe('update application use case', () => {
         updateApplication(
           context,
           applicationId,
-          { role: 'Staff Engineer' },
+          { expectedUpdatedAt: updatedAt, role: 'Staff Engineer' },
           dependencies,
         ),
       {
@@ -479,7 +485,7 @@ describe('update application use case', () => {
     expect(dependencies.now).not.toHaveBeenCalled()
   })
 
-  it('maps a vanished owner-scoped update to the same unavailable result', async () => {
+  it('maps a version race during the owner-scoped update to a conflict', async () => {
     const { dependencies } = createDependencies({
       applicationRepository: { update: vi.fn(async () => null) },
       now: () => new Date(nextUpdatedAt),
@@ -490,14 +496,39 @@ describe('update application use case', () => {
         updateApplication(
           context,
           applicationId,
-          { role: 'Staff Engineer' },
+          { expectedUpdatedAt: updatedAt, role: 'Staff Engineer' },
           dependencies,
         ),
       {
-        code: 'application-unavailable',
-        kind: 'application-unavailable',
+        code: 'application-update-conflict',
+        kind: 'application-update-conflict',
       },
     )
+  })
+
+  it('rejects an already stale version before resume validation or mutation', async () => {
+    const { applicationRepository, dependencies } = createDependencies()
+
+    await expectServiceError(
+      () =>
+        updateApplication(
+          context,
+          applicationId,
+          {
+            expectedUpdatedAt: createdAt,
+            selectedBaseResumeId: otherBaseResumeId,
+          },
+          dependencies,
+        ),
+      {
+        code: 'application-update-conflict',
+        kind: 'application-update-conflict',
+      },
+    )
+
+    expect(dependencies.createResumeSelectionRepository).not.toHaveBeenCalled()
+    expect(dependencies.now).not.toHaveBeenCalled()
+    expect(applicationRepository.update).not.toHaveBeenCalled()
   })
 
   it('rejects an invalid clock before mutation', async () => {
@@ -510,7 +541,28 @@ describe('update application use case', () => {
         updateApplication(
           context,
           applicationId,
-          { role: 'Staff Engineer' },
+          { expectedUpdatedAt: updatedAt, role: 'Staff Engineer' },
+          dependencies,
+        ),
+      {
+        code: 'application-management-unavailable',
+        kind: 'unexpected-failure',
+      },
+    )
+    expect(applicationRepository.update).not.toHaveBeenCalled()
+  })
+
+  it('rejects a timestamp that would not advance the saved version', async () => {
+    const { applicationRepository, dependencies } = createDependencies({
+      now: () => new Date(updatedAt),
+    })
+
+    await expectServiceError(
+      () =>
+        updateApplication(
+          context,
+          applicationId,
+          { expectedUpdatedAt: updatedAt, role: 'Staff Engineer' },
           dependencies,
         ),
       {
@@ -556,7 +608,7 @@ describe('application management failure boundaries', () => {
         updateApplication(
           context,
           applicationId,
-          { role: 'Staff Engineer' },
+          { expectedUpdatedAt: updatedAt, role: 'Staff Engineer' },
           dependencies,
         ),
     },

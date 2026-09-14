@@ -15,7 +15,7 @@ const props = withDefaults(
     optional?: boolean
     placeholder?: string
     rows?: number
-    type?: 'text' | 'url'
+    type?: 'date' | 'text' | 'url'
   }>(),
   {
     autocomplete: undefined,

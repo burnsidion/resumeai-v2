@@ -63,6 +63,14 @@ const toUpdateServiceEndpointError = (
     )
   }
 
+  if (error.kind === 'application-update-conflict') {
+    return createApplicationUpdateEndpointError(
+      'application-update-conflict',
+      409,
+      'The application changed before this update could be saved.',
+    )
+  }
+
   if (error.kind === 'selected-base-resume-unavailable') {
     return createApplicationUpdateEndpointError(
       'selected-base-resume-unavailable',

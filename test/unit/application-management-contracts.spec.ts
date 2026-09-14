@@ -19,6 +19,7 @@ import {
 import { applicationStatusSchema as dashboardApplicationStatusSchema } from '../../shared/product-data/dashboard'
 
 const baseResumeId = '465e390d-f7cd-4f11-ac19-80a6cf9760fb'
+const expectedUpdatedAt = '2026-08-20T18:00:00+00:00'
 
 describe('application management input contracts', () => {
   it('normalizes a complete creation request and defaults omitted values', () => {
@@ -125,12 +126,14 @@ describe('application management input contracts', () => {
     expect(
       updateApplicationRequestSchema.parse({
         appliedOn: '2026-08-20',
+        expectedUpdatedAt,
         jobDescription: '   ',
         selectedBaseResumeId: null,
         status: 'applied',
       }),
     ).toEqual({
       appliedOn: '2026-08-20',
+      expectedUpdatedAt,
       jobDescription: null,
       selectedBaseResumeId: null,
       status: 'applied',
@@ -140,23 +143,40 @@ describe('application management input contracts', () => {
   it('rejects empty updates, invalid dates, statuses, IDs, and immutable fields', () => {
     expect(updateApplicationRequestSchema.safeParse({}).success).toBe(false)
     expect(
-      updateApplicationRequestSchema.safeParse({ company: undefined }).success,
-    ).toBe(false)
-    expect(
-      updateApplicationRequestSchema.safeParse({ appliedOn: '08/20/2026' })
-        .success,
-    ).toBe(false)
-    expect(
-      updateApplicationRequestSchema.safeParse({ status: 'archived' }).success,
+      updateApplicationRequestSchema.safeParse({
+        company: undefined,
+        expectedUpdatedAt,
+      }).success,
     ).toBe(false)
     expect(
       updateApplicationRequestSchema.safeParse({
+        appliedOn: '08/20/2026',
+        expectedUpdatedAt,
+      }).success,
+    ).toBe(false)
+    expect(
+      updateApplicationRequestSchema.safeParse({
+        expectedUpdatedAt,
+        status: 'archived',
+      }).success,
+    ).toBe(false)
+    expect(
+      updateApplicationRequestSchema.safeParse({
+        expectedUpdatedAt,
         selectedBaseResumeId: 'not-a-uuid',
       }).success,
     ).toBe(false)
     expect(
-      updateApplicationRequestSchema.safeParse({ userId: baseResumeId })
-        .success,
+      updateApplicationRequestSchema.safeParse({
+        expectedUpdatedAt,
+        userId: baseResumeId,
+      }).success,
+    ).toBe(false)
+    expect(
+      updateApplicationRequestSchema.safeParse({
+        expectedUpdatedAt: 'not-a-timestamp',
+        role: 'Staff Engineer',
+      }).success,
     ).toBe(false)
   })
 })
@@ -280,6 +300,11 @@ describe('application management product contracts', () => {
   })
 
   it('defines the stable endpoint error vocabulary before transport mapping', () => {
+    expect(
+      applicationManagementEndpointErrorCodeSchema.parse(
+        'application-update-conflict',
+      ),
+    ).toBe('application-update-conflict')
     expect(
       applicationManagementEndpointErrorCodeSchema.parse(
         'selected-base-resume-unavailable',
