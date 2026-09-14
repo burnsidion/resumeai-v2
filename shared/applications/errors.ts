@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 export const applicationManagementEndpointErrorCodeSchema = z.enum([
   'application-save-unavailable',
+  'application-update-conflict',
   'application-unavailable',
   'applications-unavailable',
   'authentication-required',

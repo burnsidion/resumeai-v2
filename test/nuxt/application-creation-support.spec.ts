@@ -64,6 +64,40 @@ describe('application base resume selector', () => {
     await wrapper.get('button').trigger('click')
     expect(wrapper.emitted('retry')).toHaveLength(1)
   })
+
+  it('preserves an unavailable historical selection without offering it again', async () => {
+    const unavailableSelection = {
+      availabilityLabel: 'Unavailable' as const,
+      filename: 'Retired Frontend Resume.pdf',
+      id: 'edab48cd-9d8b-4d51-bc6f-21315ca5a90e',
+      isAvailable: false as const,
+    }
+    const wrapper = await mountSuspended(ApplicationBaseResumeSelector, {
+      props: {
+        currentSelection: unavailableSelection,
+        disabled: false,
+        items: [resume],
+        modelValue: unavailableSelection.id,
+        status: 'success',
+      },
+    })
+
+    const historicalOption = wrapper.get<HTMLInputElement>(
+      `input[value="${unavailableSelection.id}"]`,
+    )
+
+    expect(historicalOption.element.checked).toBe(true)
+    expect(historicalOption.attributes('disabled')).toBe('')
+    expect(wrapper.text()).toContain(
+      'Unavailable · Preserved for this application',
+    )
+
+    await wrapper.get<HTMLInputElement>('input[type="radio"]').setValue()
+    expect(wrapper.emitted('update:modelValue')).toEqual([[null]])
+    await wrapper.setProps({ modelValue: null })
+
+    expect(wrapper.text()).not.toContain('Retired Frontend Resume.pdf')
+  })
 })
 
 describe('application readiness panel', () => {
@@ -94,5 +128,21 @@ describe('application readiness panel', () => {
     expect(wrapper.text()).toContain('Job description added')
     expect(wrapper.text()).toContain('Base resume selected')
     expect(wrapper.text()).toContain('only when you explicitly request it')
+  })
+
+  it('uses editing-specific readiness copy without implying a new draft', async () => {
+    const wrapper = await mountSuspended(ApplicationReadinessPanel, {
+      props: {
+        context: 'editing',
+        readiness: {
+          isReady: false,
+          missingRequirements: ['base-resume'],
+        },
+      },
+    })
+
+    expect(wrapper.text()).toContain('Save changes, prepare later')
+    expect(wrapper.text()).toContain('still required before tailoring')
+    expect(wrapper.text()).not.toContain('optional for creation')
   })
 })

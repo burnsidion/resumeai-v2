@@ -368,6 +368,7 @@ export function createApplicationManagementRepository({
           .update(toApplicationUpdate(record))
           .eq('user_id', userId)
           .eq('id', id)
+          .eq('updated_at', record.expectedUpdatedAt)
           .select(applicationManagementProjection)
           .maybeSingle()
 

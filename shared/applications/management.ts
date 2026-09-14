@@ -73,6 +73,7 @@ export const updateApplicationRequestSchema = z
   .object({
     appliedOn: applicationAppliedOnSchema.nullable().optional(),
     company: applicationCompanySchema.optional(),
+    expectedUpdatedAt: timestampSchema,
     jobDescription: applicationJobDescriptionSchema.optional(),
     notes: applicationNotesSchema.optional(),
     postingUrl: applicationPostingUrlSchema.optional(),
@@ -82,7 +83,8 @@ export const updateApplicationRequestSchema = z
   })
   .strict()
   .refine(
-    (input) => Object.values(input).some((value) => value !== undefined),
+    ({ expectedUpdatedAt: _expectedUpdatedAt, ...input }) =>
+      Object.values(input).some((value) => value !== undefined),
     {
       message: 'At least one application field is required.',
     },

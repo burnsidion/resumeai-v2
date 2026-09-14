@@ -4,9 +4,15 @@ import type {
   ApplicationReadinessRequirement,
 } from '~~/shared/applications/management'
 
-const props = defineProps<{
-  readiness: ApplicationReadiness
-}>()
+const props = withDefaults(
+  defineProps<{
+    context?: 'creation' | 'editing'
+    readiness: ApplicationReadiness
+  }>(),
+  {
+    context: 'creation',
+  },
+)
 
 const headingId = useId()
 const missingRequirements = computed<
@@ -45,16 +51,34 @@ const requirements = computed(() => [
       {{ readiness.isReady ? 'Preparation complete' : 'Preparation' }}
     </p>
     <h2 :id="headingId" class="mt-2 text-base font-semibold tracking-[-0.02em]">
-      {{ readiness.isReady ? 'Ready after saving' : 'Save now, prepare later' }}
+      {{
+        readiness.isReady
+          ? 'Ready after saving'
+          : context === 'editing'
+            ? 'Save changes, prepare later'
+            : 'Save now, prepare later'
+      }}
     </h2>
     <p class="text-muted mt-2 text-xs leading-5">
       <template v-if="readiness.isReady">
-        Saving creates a ready draft. Tailoring will still begin only when you
-        explicitly request it.
+        <template v-if="context === 'editing'">
+          These changes meet the preparation requirements. Tailoring will still
+          begin only when you explicitly request it.
+        </template>
+        <template v-else>
+          Saving creates a ready draft. Tailoring will still begin only when you
+          explicitly request it.
+        </template>
       </template>
       <template v-else>
-        This draft can be saved now. The items below are optional for creation
-        and required only before tailoring.
+        <template v-if="context === 'editing'">
+          You can save these changes now. The items below are still required
+          before tailoring.
+        </template>
+        <template v-else>
+          This draft can be saved now. The items below are optional for creation
+          and required only before tailoring.
+        </template>
       </template>
     </p>
 
