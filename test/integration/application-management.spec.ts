@@ -372,7 +372,7 @@ test('manages only the authenticated owner applications through the Nuxt server'
     })
     await expect(
       ownerTwoPage.getByRole('heading', {
-        name: 'We couldn’t load this application',
+        name: 'This application can’t be opened',
       }),
     ).toBeVisible()
     await expect(ownerTwoPage.getByText('Northstar Labs')).toHaveCount(0)
@@ -495,20 +495,103 @@ test('manages only the authenticated owner applications through the Nuxt server'
     await expect(
       page.getByRole('heading', { name: 'Product Engineer' }),
     ).toBeVisible()
-    await expect(page.getByText('Aurora Works')).toBeVisible()
-    await expect(page.getByText('Ready for tailoring')).toBeVisible()
-    await expect(page.getByText('Owner One Resume.pdf')).toBeVisible()
-    await expect(page.getByText('Tailoring has not started')).toBeVisible()
+    await expect(page.getByLabel('Company')).toHaveValue('Aurora Works')
+    await expect(page.getByLabel('Role')).toHaveValue('Product Engineer')
+    await expect(
+      page.getByRole('heading', { name: 'Ready after saving' }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('radio', { name: /Owner One Resume\.pdf/ }),
+    ).toBeChecked()
+    await expect(
+      page.getByText(/Tailoring will still begin only when you explicitly/),
+    ).toBeVisible()
 
     const createdApplicationId = new URL(page.url()).pathname.split('/').at(-1)
 
     expect(createdApplicationId).toMatch(/^[0-9a-f-]{36}$/)
-    await page.reload({ waitUntil: 'networkidle' })
+
+    await page.getByLabel('Company').fill('Aurora Product Works')
+    await page.getByLabel('Role').fill('Staff Product Engineer')
+    await page.getByLabel('Tracking status').selectOption('interviewing')
+    await page.getByLabel('Applied date').fill('2026-09-13')
+    await page
+      .getByLabel('Private notes')
+      .fill('Prepare for the panel interview.')
+    await expect(page.getByText('Unsaved changes')).toBeVisible()
+
+    let discardPrompt = ''
+
+    page.once('dialog', async (dialog) => {
+      discardPrompt = dialog.message()
+      await dialog.dismiss()
+    })
+    await page
+      .locator('main')
+      .getByRole('button', { exact: true, name: 'Applications' })
+      .click()
+    await expect(page).toHaveURL(
+      new RegExp(`/applications/${createdApplicationId}$`),
+    )
+    expect(discardPrompt).toContain('Discard your unsaved changes?')
+
+    await page.getByRole('button', { name: 'Save changes' }).click()
     await expect(
-      page.getByRole('heading', { name: 'Product Engineer' }),
+      page.getByRole('status').filter({ hasText: 'were saved' }),
+    ).toContainText('Changes to Staff Product Engineer were saved.')
+    await expect(
+      page.getByRole('heading', { name: 'Staff Product Engineer' }),
+    ).toBeVisible()
+    await expect(
+      page.getByText('Aurora Product Works', { exact: true }),
     ).toBeVisible()
 
-    await page.getByRole('button', { name: 'Back to applications' }).click()
+    await page.reload({ waitUntil: 'networkidle' })
+    await expect(
+      page.getByRole('heading', { name: 'Staff Product Engineer' }),
+    ).toBeVisible()
+    await expect(page.getByLabel('Company')).toHaveValue('Aurora Product Works')
+    await expect(page.getByLabel('Role')).toHaveValue('Staff Product Engineer')
+    await expect(page.getByLabel('Tracking status')).toHaveValue('interviewing')
+    await expect(page.getByLabel('Applied date')).toHaveValue('2026-09-13')
+    await expect(page.getByLabel('Private notes')).toHaveValue(
+      'Prepare for the panel interview.',
+    )
+
+    const beforeConcurrentUpdateResponse = await context.request.get(
+      applicationDetailUrl(createdApplicationId ?? ''),
+    )
+    const beforeConcurrentUpdate = applicationDetailResponseSchema.parse(
+      await beforeConcurrentUpdateResponse.json(),
+    ).application
+    const concurrentUpdateResponse = await updateApplication(
+      context.request,
+      createdApplicationId ?? '',
+      {
+        expectedUpdatedAt: beforeConcurrentUpdate.updatedAt,
+        notes: 'Recruiter moved the interview to Thursday.',
+      },
+    )
+
+    expect(concurrentUpdateResponse.status()).toBe(200)
+
+    await page.getByLabel('Company').fill('Stale local company name')
+    await page.getByRole('button', { name: 'Save changes' }).click()
+    await expect(
+      page.getByText('This application changed after you opened it.'),
+    ).toBeVisible()
+    await expect(page.getByText(/were saved/)).toHaveCount(0)
+
+    await page.getByRole('button', { name: 'Reload application' }).click()
+    await expect(page.getByLabel('Company')).toHaveValue('Aurora Product Works')
+    await expect(page.getByLabel('Private notes')).toHaveValue(
+      'Recruiter moved the interview to Thursday.',
+    )
+
+    await page
+      .locator('main')
+      .getByRole('button', { exact: true, name: 'Applications' })
+      .click()
     await expect(page).toHaveURL(/\/applications$/)
 
     const applicationList = page.getByRole('region', {
@@ -521,7 +604,7 @@ test('manages only the authenticated owner applications through the Nuxt server'
     await expect(applicationLinks).toHaveCount(2)
     await expect(applicationLinks.nth(0)).toHaveAttribute(
       'aria-label',
-      'Open Product Engineer at Aurora Works',
+      'Open Staff Product Engineer at Aurora Product Works',
     )
     await expect(applicationLinks.nth(1)).toHaveAttribute(
       'aria-label',
@@ -536,9 +619,43 @@ test('manages only the authenticated owner applications through the Nuxt server'
       new RegExp(`/applications/${createdApplicationId}$`),
     )
     await expect(
-      page.getByRole('heading', { name: 'Product Engineer' }),
+      page.getByRole('heading', { name: 'Staff Product Engineer' }),
     ).toBeVisible()
-    await page.getByRole('button', { name: 'Back to applications' }).click()
+
+    const retirementResponse = await context.request.post(
+      new URL(
+        `/api/base-resumes/${ownerOneResumeId}/retire`,
+        applicationUrl,
+      ).toString(),
+    )
+
+    expect(retirementResponse.status()).toBe(200)
+
+    await page.reload({ waitUntil: 'networkidle' })
+
+    const historicalResume = page.getByRole('radio', {
+      name: /Owner One Resume\.pdf.*Unavailable/,
+    })
+
+    await expect(historicalResume).toBeChecked()
+    await expect(historicalResume).toBeDisabled()
+    await expect(
+      page.getByText('Unavailable · Preserved for this application'),
+    ).toBeVisible()
+    await expect(page.getByText('Choose a base resume')).toBeVisible()
+
+    await page
+      .getByLabel('Private notes')
+      .fill('Historical source remains attached after retirement.')
+    await page.getByRole('button', { name: 'Save changes' }).click()
+    await expect(
+      page.getByRole('status').filter({ hasText: 'were saved' }),
+    ).toContainText('Changes to Staff Product Engineer were saved.')
+
+    await page
+      .locator('main')
+      .getByRole('button', { exact: true, name: 'Applications' })
+      .click()
     await expect(page).toHaveURL(/\/applications$/)
 
     await page.goto('/dashboard', { waitUntil: 'networkidle' })
@@ -602,10 +719,10 @@ test('manages only the authenticated owner applications through the Nuxt server'
 
     expect(persistedList.applications).toContainEqual(
       expect.objectContaining({
-        company: 'Aurora Works',
+        company: 'Aurora Product Works',
         id: createdApplicationId,
-        role: 'Product Engineer',
-        status: 'draft',
+        role: 'Staff Product Engineer',
+        status: 'interviewing',
       }),
     )
 
