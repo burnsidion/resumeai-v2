@@ -209,8 +209,9 @@ separate product-data path.
 Application workflow coverage also verifies the protected list redirect, valid
 empty state, entry from the authenticated dashboard, and recent-first rendering
 after creating a ready draft through the real browser and Nuxt server. It opens
-the saved application through the complete-row link, confirms list navigation
-through expanded, collapsed, and mobile shells without horizontal overflow, and
+an owned saved application through both the dashboard's recent-work link and
+the application-list complete-row link, confirms list navigation through
+expanded, collapsed, and mobile shells without horizontal overflow, and
 verifies that another authenticated owner receives the same neutral unavailable
 state without private application details.
 

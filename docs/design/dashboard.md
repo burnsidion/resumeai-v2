@@ -232,6 +232,9 @@ Each item prioritizes:
 The panel should contain a small bounded number of records and a `View all`
 action that delegates detailed management to Applications.
 
+Each recent-application row opens that owned application's workspace. The
+dashboard does not offer inline editing or tracking controls.
+
 A follow-up reminder may appear as optional contextual content within this
 panel when supported by approved product data. It is not a separate dashboard
 section, required dashboard state, or independently owned reminder system.

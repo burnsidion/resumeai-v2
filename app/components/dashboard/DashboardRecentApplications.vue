@@ -35,34 +35,36 @@ const statusClasses = {
     </div>
 
     <ul v-if="applications.items.length > 0" class="mt-5 space-y-2">
-      <li
-        v-for="application in applications.items"
-        :key="application.id"
-        class="border-line bg-panel/35 grid min-h-[4.25rem] grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto_auto] sm:px-4"
-      >
-        <span
-          class="bg-high grid size-10 place-items-center rounded-lg text-sm font-semibold"
-          aria-hidden="true"
+      <li v-for="application in applications.items" :key="application.id">
+        <NuxtLink
+          :to="`/applications/${application.id}`"
+          :aria-label="`Open ${application.role} at ${application.company}`"
+          class="border-line bg-panel/35 hover:border-accent/35 hover:bg-accent/5 focus-visible:outline-focus grid min-h-[4.25rem] grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 transition-colors sm:grid-cols-[2.5rem_minmax(0,1fr)_auto_auto] sm:px-4"
         >
-          {{ application.initial }}
-        </span>
-        <span class="min-w-0">
-          <span class="block truncate text-sm font-medium">
-            {{ application.role }}
+          <span
+            class="bg-high grid size-10 place-items-center rounded-lg text-sm font-semibold"
+            aria-hidden="true"
+          >
+            {{ application.initial }}
           </span>
-          <span class="text-muted mt-0.5 block truncate text-xs">
-            {{ application.company }}
+          <span class="min-w-0">
+            <span class="block truncate text-sm font-medium">
+              {{ application.role }}
+            </span>
+            <span class="text-muted mt-0.5 block truncate text-xs">
+              {{ application.company }}
+            </span>
           </span>
-        </span>
-        <span
-          class="hidden min-h-7 items-center rounded-lg border px-3 text-xs font-medium sm:inline-flex"
-          :class="statusClasses[application.statusTone]"
-        >
-          {{ application.statusLabel }}
-        </span>
-        <time class="text-muted text-xs" :datetime="application.dateTime">
-          {{ application.dateLabel }}
-        </time>
+          <span
+            class="hidden min-h-7 items-center rounded-lg border px-3 text-xs font-medium sm:inline-flex"
+            :class="statusClasses[application.statusTone]"
+          >
+            {{ application.statusLabel }}
+          </span>
+          <time class="text-muted text-xs" :datetime="application.dateTime">
+            {{ application.dateLabel }}
+          </time>
+        </NuxtLink>
       </li>
     </ul>
 

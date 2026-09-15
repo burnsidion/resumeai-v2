@@ -472,6 +472,23 @@ test('manages only the authenticated owner applications through the Nuxt server'
     })
 
     await page.goto('/dashboard', { waitUntil: 'networkidle' })
+    const recentApplication = page.getByRole('link', {
+      name: 'Open Senior Frontend Engineer at Northstar Labs, Inc.',
+    })
+
+    await expect(recentApplication).toHaveAttribute(
+      'href',
+      `/applications/${ownerOneApplication.id}`,
+    )
+    await recentApplication.click()
+    await expect(page).toHaveURL(
+      new RegExp(`/applications/${ownerOneApplication.id}$`),
+    )
+    await expect(
+      page.getByRole('heading', { name: 'Senior Frontend Engineer' }),
+    ).toBeVisible()
+
+    await page.goto('/dashboard', { waitUntil: 'networkidle' })
     await page
       .getByRole('button', { exact: true, name: 'Create application' })
       .first()
