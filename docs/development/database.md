@@ -67,8 +67,8 @@ The application uses these minimum grants:
 
 - `base_resumes`: select, insert, and updates limited to retirement fields;
 - `resume_interpretations`: select and insert only;
-- `applications`: select, insert, and updates limited to mutable application
-  fields;
+- `applications`: select, insert, updates limited to mutable application
+  fields, and owner-only deletion;
 - `working_copies`: select, insert, mutable-field updates, and delete so the
   current proposal can be discarded;
 - `finalized_resumes`: select and insert only.
@@ -76,8 +76,12 @@ The application uses these minimum grants:
 Anonymous and service-role DML grants are revoked from the product tables. The
 application does not use a service-role key. Base-resume source fields,
 interpretations, and finalized resumes remain immutable through column-level
-grants. Application deletion remains unsupported. A working copy may be
-deleted only by its owner, and existing foreign keys prevent deletion once a
+grants. An owner may permanently delete an application aggregate through the
+trusted Nuxt server boundary. Database foreign keys remove its dependent
+working copy and finalized resume atomically, while the application-to-submitted
+artifact reference is cleared only as part of that deletion. The selected base
+resume and its immutable original PDF remain untouched. A working copy may
+still be deleted only by its owner, but a direct delete is prevented once a
 finalized resume references it.
 
 Interpretation and finalization inserts remain server-owned use cases even

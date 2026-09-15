@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import ApplicationDeletionDialog from '~/components/applications/ApplicationDeletionDialog.vue'
 import ApplicationEditingForm from '~/components/applications/ApplicationEditingForm.vue'
+import type { ApplicationDeletionRecovery } from '~/composables/useApplicationDeletion'
 import type { ApplicationEditingRecovery } from '~/composables/useApplicationEditing'
 import type { UpdateApplicationRequest } from '~~/shared/applications/management'
 import {
@@ -39,6 +41,7 @@ const editing = useApplicationEditing()
 const isDirty = ref(false)
 const navigationApproved = ref(false)
 const savedAnnouncement = ref('')
+const deletionDialogOpen = ref(false)
 
 const application = computed(() => data.value?.application ?? null)
 const baseResumeItems = computed(() => baseResumes.value?.items ?? [])
@@ -152,6 +155,59 @@ const reloadApplication = async (): Promise<void> => {
 const refreshBaseResumes = async (): Promise<void> => {
   await refreshBaseResumesRequest()
   editing.reset()
+}
+
+const openDeletionDialog = (): void => {
+  if (!editing.isBusy.value) {
+    deletionDialogOpen.value = true
+  }
+}
+
+const closeDeletionDialog = (): void => {
+  deletionDialogOpen.value = false
+}
+
+const handleApplicationDeleted = async (
+  deletedApplicationId: string,
+): Promise<void> => {
+  if (deletedApplicationId !== applicationId) {
+    return
+  }
+
+  deletionDialogOpen.value = false
+  data.value = undefined
+  isDirty.value = false
+  savedAnnouncement.value = ''
+  editing.reset()
+  clearNuxtData('applications-list')
+  clearNuxtData('dashboard')
+  navigationApproved.value = true
+
+  try {
+    await navigateTo('/applications', { replace: true })
+  } finally {
+    navigationApproved.value = false
+  }
+}
+
+const handleDeletionRecovery = async (
+  recovery: ApplicationDeletionRecovery,
+): Promise<void> => {
+  switch (recovery) {
+    case 'back-to-applications':
+      closeDeletionDialog()
+      await navigateAway('/applications')
+      return
+    case 'refresh-application':
+      closeDeletionDialog()
+      await reloadApplication()
+      return
+    case 'retry':
+      return
+    case 'sign-in':
+      closeDeletionDialog()
+      await navigateAway('/sign-in', { replace: true })
+  }
 }
 
 const handleEditingRecovery = async (
@@ -284,6 +340,50 @@ onBeforeUnmount(() =>
         @dirty-changed="handleDirtyChanged"
         @recovery-requested="handleEditingRecovery"
         @resume-retry-requested="refreshBaseResumesRequest"
+      />
+
+      <section
+        class="border-danger/25 bg-danger/[0.035] mt-8 rounded-2xl border p-5 sm:p-6"
+        aria-labelledby="application-deletion-heading"
+      >
+        <p
+          class="text-danger text-xs font-semibold tracking-[0.14em] uppercase"
+        >
+          Danger zone
+        </p>
+        <div
+          class="mt-3 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <h2
+              id="application-deletion-heading"
+              class="text-lg font-semibold tracking-[-0.02em]"
+            >
+              Delete application
+            </h2>
+            <p class="text-muted mt-1 max-w-2xl text-sm leading-6">
+              Permanently remove this application and any attached working copy
+              or finalized resume. Your original base resume stays untouched.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="border-danger/30 bg-danger/12 text-danger hover:bg-danger/18 focus-visible:outline-focus min-h-11 shrink-0 rounded-xl border px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+            :disabled="editing.isBusy.value"
+            @click="openDeletionDialog"
+          >
+            Delete application
+          </button>
+        </div>
+      </section>
+
+      <ApplicationDeletionDialog
+        :open="deletionDialogOpen"
+        :application="application"
+        :has-unsaved-changes="isDirty"
+        @close="closeDeletionDialog"
+        @deleted="handleApplicationDeleted"
+        @recovery-requested="handleDeletionRecovery"
       />
     </template>
 

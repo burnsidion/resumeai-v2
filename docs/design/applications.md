@@ -47,7 +47,6 @@ OWL-37 does not define or approve:
 
 - AI analysis, working-copy review, revisions, or finalization;
 - PDF interpretation, generation, preview, or download;
-- application deletion;
 - search, filtering, analytics, reminders, or notifications;
 - background jobs or automatic tailoring;
 - a new application shell or global design system; or
@@ -273,7 +272,29 @@ changes do not start tailoring.
 
 The same required-field, validation, error-preservation, and duplicate-submit
 rules used by creation apply to editing. Save changes affect this application
-only. Application deletion is unavailable.
+only.
+
+### Permanent deletion
+
+The detail workspace contains one restrained danger-zone action for permanent
+cleanup of an application created in error or no longer wanted. Rejected and
+withdrawn remain normal historical tracking states; they are not deletion
+shortcuts.
+
+- The user must open an application-specific confirmation dialog before any
+  deletion request is made.
+- The dialog identifies the role and company, states that deletion cannot be
+  undone, and explains that attached working copies and finalized resumes are
+  removed with the application.
+- The original base-resume PDF is never deleted or retired by this action.
+- If the page has unsaved edits, the dialog makes clear that those edits will
+  not be saved.
+- While the request is unresolved, the dialog cannot be dismissed and its
+  confirmation action cannot be submitted again.
+- On confirmed deletion, return to `/applications` and reconcile the
+  applications list and dashboard from their existing trusted reads.
+- Missing and cross-owner applications use the same neutral unavailable
+  recovery without exposing ownership information.
 
 ## Loading, failure, and access states
 
@@ -379,6 +400,9 @@ component names:
   deterministic requirements.
 - **Application async state** owns loading, retry, and inaccessible page
   presentations.
+- **Application deletion confirmation** owns one explicit permanent-action
+  confirmation, its focused keyboard interaction, and sanitized mutation
+  recovery; the detail page owns opening it and navigating after confirmation.
 
 Pages remain responsible for route composition, loading, transport errors, and
 navigation. These boundaries do not authorize speculative global primitives or
