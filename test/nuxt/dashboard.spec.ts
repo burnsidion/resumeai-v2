@@ -72,7 +72,7 @@ describe('dashboard', () => {
     expect(wrapper.text()).toContain('Slot 2')
   })
 
-  it('enables the available dashboard actions while preserving later disabled actions', async () => {
+  it('enables implemented dashboard actions while preserving working-copy review as unavailable', async () => {
     const wrapper = await mountSuspended(DashboardPage)
     const quickActions = wrapper.get(
       '[aria-labelledby="quick-actions-heading"]',
@@ -92,9 +92,13 @@ describe('dashboard', () => {
     ).not.toHaveProperty('disabled')
     expect(
       wrapper.findAll('button:disabled').map((button) => button.text()),
-    ).toEqual(
-      expect.arrayContaining(['Review working copy', 'Open application']),
-    )
+    ).toEqual(expect.arrayContaining(['Review working copy']))
+    expect(
+      wrapper
+        .findAll('button')
+        .find((button) => button.text().includes('Open application'))
+        ?.attributes(),
+    ).not.toHaveProperty('disabled')
   })
 
   it('opens the applications list from the quick action and recent-applications header', async () => {
@@ -131,6 +135,33 @@ describe('dashboard', () => {
     expect(navigateToMock).toHaveBeenCalledTimes(2)
     expect(navigateToMock).toHaveBeenNthCalledWith(1, '/applications/new')
     expect(navigateToMock).toHaveBeenNthCalledWith(2, '/applications/new')
+  })
+
+  it('opens owned applications from recent work and ready-for-review context', async () => {
+    const wrapper = await mountSuspended(DashboardPage)
+    const recentApplications = wrapper.get(
+      '[aria-labelledby="recent-applications-heading"]',
+    )
+    const recentApplication = recentApplications.get(
+      'a[aria-label="Open Product Engineer at Lantern Health"]',
+    )
+    const readyForReview = wrapper.get(
+      '[aria-labelledby="dashboard-attention-heading"]',
+    )
+    const openApplication = readyForReview
+      .findAll('button')
+      .find((button) => button.text().includes('Open application'))
+
+    expect(recentApplication.attributes('href')).toBe(
+      '/applications/4120cbac-ebf4-4580-8988-3fbc65ca9449',
+    )
+    expect(openApplication).toBeDefined()
+
+    await openApplication?.trigger('click')
+
+    expect(navigateToMock).toHaveBeenCalledWith(
+      '/applications/dd87d5fd-ad50-46da-b07f-b5470e03aca7',
+    )
   })
 
   it('renders zero product data as helpful empty guidance', async () => {

@@ -31,6 +31,10 @@ const openApplications = async (): Promise<void> => {
   await navigateTo('/applications')
 }
 
+const openApplication = async (applicationId: string): Promise<void> => {
+  await navigateTo(`/applications/${encodeURIComponent(applicationId)}`)
+}
+
 const handleBaseResumeUploaded = async (): Promise<void> => {
   await refresh()
 }
@@ -65,6 +69,7 @@ const handleUploadRecovery = async (
       >
         <DashboardReadyForReview
           :item="dashboard.attention"
+          @application-requested="openApplication"
           @create-requested="openApplicationCreation"
           @upload-requested="openBaseResumeUpload"
         />

@@ -14,9 +14,19 @@ const guidance = computed(() =>
 )
 
 const emit = defineEmits<{
+  'application-requested': [applicationId: string]
   'create-requested': []
   'upload-requested': []
 }>()
+
+const requestApplication = (): void => {
+  if (
+    readyForReview.value?.secondaryAction.availability === 'available' &&
+    readyForReview.value.secondaryAction.id === 'open-application'
+  ) {
+    emit('application-requested', readyForReview.value.applicationId)
+  }
+}
 
 const requestGuidanceAction = (): void => {
   const action = guidance.value?.action
@@ -107,15 +117,20 @@ const requestGuidanceAction = (): void => {
         type="button"
         disabled
         class="bg-accent text-canvas min-h-11 cursor-not-allowed rounded-xl px-5 text-sm font-semibold opacity-60"
-        title="Working-copy review is not available in this checkpoint"
+        title="Working-copy review is not available yet"
       >
         {{ readyForReview.primaryAction.label }}
       </button>
       <button
         type="button"
-        disabled
-        class="text-accent min-h-11 cursor-not-allowed rounded-xl px-4 text-sm font-semibold opacity-60"
-        title="Application details are not available in this checkpoint"
+        :disabled="readyForReview?.secondaryAction.availability !== 'available'"
+        class="text-accent focus-visible:outline-focus enabled:hover:bg-accent/10 min-h-11 rounded-xl px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+        :title="
+          readyForReview?.secondaryAction.availability === 'unavailable'
+            ? 'Application details are not available yet'
+            : undefined
+        "
+        @click="requestApplication"
       >
         {{ readyForReview.secondaryAction.label }}
       </button>

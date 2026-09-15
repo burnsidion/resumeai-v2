@@ -13,7 +13,8 @@ export const populatedDashboardViewModel = {
     },
     role: 'Senior Frontend Engineer',
     secondaryAction: {
-      availability: 'unavailable',
+      availability: 'available',
+      id: 'open-application',
       label: 'Open application',
     },
     status: 'Working copy ready',

@@ -71,6 +71,11 @@ describe('dashboard presentation mapper', () => {
       company: 'Northstar Labs',
       kind: 'ready-for-review',
       role: 'Senior Frontend Engineer',
+      secondaryAction: {
+        availability: 'available',
+        id: 'open-application',
+        label: 'Open application',
+      },
       status: 'Working copy ready',
     })
     expect(viewModel.recentApplications.items[0]).toMatchObject({

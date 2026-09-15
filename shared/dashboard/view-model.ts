@@ -12,6 +12,14 @@ export const dashboardUnavailableActionSchema = z
   })
   .strict()
 
+const dashboardOpenApplicationActionSchema = z
+  .object({
+    availability: z.literal('available'),
+    id: z.literal('open-application'),
+    label: z.string().trim().min(1),
+  })
+  .strict()
+
 export const dashboardActionAvailabilitySchema = z.enum([
   'available',
   'unavailable',
@@ -50,7 +58,10 @@ const dashboardReviewAttentionSchema = z
     kind: z.literal('ready-for-review'),
     primaryAction: dashboardUnavailableActionSchema,
     role: z.string().trim().min(1),
-    secondaryAction: dashboardUnavailableActionSchema,
+    secondaryAction: z.discriminatedUnion('availability', [
+      dashboardOpenApplicationActionSchema,
+      dashboardUnavailableActionSchema,
+    ]),
     status: z.string().trim().min(1),
     workingCopyId: z.uuid(),
   })

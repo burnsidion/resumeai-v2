@@ -74,7 +74,8 @@ const createAttentionViewModel = (
       },
       role: productData.readyForReview.role,
       secondaryAction: {
-        availability: 'unavailable',
+        availability: 'available',
+        id: 'open-application',
         label: 'Open application',
       },
       status: 'Working copy ready',
