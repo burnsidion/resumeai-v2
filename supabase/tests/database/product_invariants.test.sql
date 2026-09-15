@@ -459,7 +459,9 @@ select throws_ok(
       700,
       'test-renderer',
       '1.0.0'
-    )
+    );
+
+    set constraints finalized_resumes_working_copy_fkey immediate
   $$,
   '23503',
   null,

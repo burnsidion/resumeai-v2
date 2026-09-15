@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(46);
+select plan(52);
 
 insert into auth.users (id, email)
 values
@@ -278,7 +278,7 @@ select is(
         'finalized_resumes'
       )
   ),
-  14,
+  15,
   'the product tables have only the required operation policies'
 );
 
@@ -424,7 +424,8 @@ select ok(
 );
 
 select ok(
-  has_table_privilege('authenticated', 'public.working_copies', 'DELETE')
+  has_table_privilege('authenticated', 'public.applications', 'DELETE')
+  and has_table_privilege('authenticated', 'public.working_copies', 'DELETE')
   and not has_table_privilege(
     'authenticated',
     'public.base_resumes',
@@ -437,15 +438,10 @@ select ok(
   )
   and not has_table_privilege(
     'authenticated',
-    'public.applications',
-    'DELETE'
-  )
-  and not has_table_privilege(
-    'authenticated',
     'public.finalized_resumes',
     'DELETE'
   ),
-  'only current working copies support authenticated deletion'
+  'application aggregates and current working copies support authenticated deletion'
 );
 
 select is(
@@ -758,7 +754,9 @@ select throws_ok(
       500,
       'test-renderer',
       '1.0.0'
-    )
+    );
+
+    set constraints finalized_resumes_working_copy_fkey immediate
   $$,
   '23503',
   null,
@@ -939,20 +937,83 @@ select throws_ok(
   $$
     delete from public.working_copies
     where id = '40000000-0000-4000-8000-000000000001'
+    ;
+
+    set constraints finalized_resumes_working_copy_fkey immediate
   $$,
   '23503',
   null,
   'a finalized source working copy remains protected by foreign keys'
 );
 
-select throws_ok(
+select results_eq(
+  $$
+    delete from public.applications
+    where id = '30000000-0000-4000-8000-000000000002'
+    returning 1
+  $$,
+  $$select 1 where false$$,
+  'an owner cannot delete another user''s application'
+);
+
+select results_eq(
   $$
     delete from public.applications
     where id = '30000000-0000-4000-8000-000000000001'
+    returning 1
   $$,
-  '42501',
-  null,
-  'application deletion remains unsupported'
+  $$values (1)$$,
+  'an owner can delete their application aggregate'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.applications
+    where id = '30000000-0000-4000-8000-000000000001'
+  ),
+  0,
+  'the deleted owned application is no longer visible'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.working_copies
+    where id = '40000000-0000-4000-8000-000000000001'
+  ),
+  0,
+  'application deletion removes its dependent working copy'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.finalized_resumes
+    where id = '50000000-0000-4000-8000-000000000001'
+  ),
+  0,
+  'application deletion removes its dependent finalized resume'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.base_resumes
+    where id = '10000000-0000-4000-8000-000000000001'
+  ),
+  1,
+  'application deletion preserves the selected base resume'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.resume_interpretations
+    where id = '20000000-0000-4000-8000-000000000001'
+  ),
+  1,
+  'application deletion preserves the source resume interpretation'
 );
 
 reset role;

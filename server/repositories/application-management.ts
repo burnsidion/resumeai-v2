@@ -132,6 +132,7 @@ export type UpdateApplicationRecord = UpdateApplicationRequest & {
 
 export type ApplicationManagementRepositoryOperation =
   | 'create-application'
+  | 'delete-application'
   | 'find-application'
   | 'list-applications'
   | 'update-application'
@@ -141,6 +142,7 @@ export type ApplicationManagementRepositoryErrorKind =
 
 export interface ApplicationManagementRepository {
   create(record: CreateApplicationRecord): Promise<ApplicationPersistenceRecord>
+  delete(id: string): Promise<string | null>
   findById(id: string): Promise<ApplicationPersistenceRecord | null>
   list(): Promise<ReadonlyArray<ApplicationPersistenceRecord>>
   update(
@@ -204,6 +206,9 @@ const parseApplicationPersistenceRecords = (
   applicationPersistenceRowsSchema
     .parse(data)
     .map(toApplicationPersistenceRecord)
+
+const parseDeletedApplicationId = (data: unknown): string =>
+  applicationIdSchema.parse(data)
 
 const toApplicationUpdate = (
   record: UpdateApplicationRecord,
@@ -327,6 +332,42 @@ export function createApplicationManagementRepository({
         }
 
         throw createRepositoryError('find-application', error)
+      }
+    },
+
+    async delete(id) {
+      try {
+        const { data, error } = await client
+          .from('applications')
+          .delete()
+          .eq('user_id', userId)
+          .eq('id', id)
+          .select('id')
+          .maybeSingle()
+
+        if (error) {
+          throw error
+        }
+
+        if (data === null) {
+          return null
+        }
+
+        try {
+          return parseDeletedApplicationId(data.id)
+        } catch (error) {
+          throw createRepositoryError(
+            'delete-application',
+            error,
+            'unexpected-result',
+          )
+        }
+      } catch (error) {
+        if (error instanceof ApplicationManagementRepositoryError) {
+          throw error
+        }
+
+        throw createRepositoryError('delete-application', error)
       }
     },
 

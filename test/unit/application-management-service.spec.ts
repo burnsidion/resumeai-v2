@@ -10,6 +10,7 @@ import type { ProductDataRepositoryContext } from '../../server/repositories/pro
 import {
   ApplicationManagementServiceError,
   createApplication,
+  deleteApplication,
   listApplications,
   loadApplication,
   updateApplication,
@@ -69,6 +70,7 @@ const createDependencies = (
 } => {
   const applicationRepository = {
     create: vi.fn(async () => application),
+    delete: vi.fn(async () => applicationId),
     findById: vi.fn(async () => application),
     list: vi.fn(async () => [application]),
     update: vi.fn(async () => application),
@@ -324,6 +326,46 @@ describe('read application use cases', () => {
       {
         code: 'application-unavailable',
         kind: 'application-unavailable',
+      },
+    )
+  })
+})
+
+describe('delete application use case', () => {
+  it('deletes one owner-visible application aggregate', async () => {
+    const { applicationRepository, dependencies } = createDependencies()
+
+    await expect(
+      deleteApplication(context, applicationId, dependencies),
+    ).resolves.toBe(applicationId)
+
+    expect(applicationRepository.delete).toHaveBeenCalledWith(applicationId)
+  })
+
+  it('maps a missing or cross-owner application to one unavailable result', async () => {
+    const { dependencies } = createDependencies({
+      applicationRepository: { delete: vi.fn(async () => null) },
+    })
+
+    await expectServiceError(
+      () => deleteApplication(context, applicationId, dependencies),
+      {
+        code: 'application-unavailable',
+        kind: 'application-unavailable',
+      },
+    )
+  })
+
+  it('rejects an unexpected deleted identifier', async () => {
+    const { dependencies } = createDependencies({
+      applicationRepository: { delete: vi.fn(async () => otherBaseResumeId) },
+    })
+
+    await expectServiceError(
+      () => deleteApplication(context, applicationId, dependencies),
+      {
+        code: 'application-management-unavailable',
+        kind: 'inconsistent-state',
       },
     )
   })
@@ -593,6 +635,11 @@ describe('application management failure boundaries', () => {
         ),
     },
     {
+      name: 'delete',
+      run: (dependencies: ApplicationManagementServiceDependencies) =>
+        deleteApplication(context, applicationId, dependencies),
+    },
+    {
       name: 'list',
       run: (dependencies: ApplicationManagementServiceDependencies) =>
         listApplications(context, dependencies),
@@ -619,6 +666,7 @@ describe('application management failure boundaries', () => {
     const { dependencies } = createDependencies({
       applicationRepository: {
         create: failure,
+        delete: failure,
         findById: failure,
         list: failure,
         update: failure,

@@ -258,6 +258,30 @@ describe('application management repository', () => {
     await expect(repository.findById(applicationId)).resolves.toBeNull()
   })
 
+  it('deletes only one owner-scoped application and returns its ID', async () => {
+    const { client, fetchMock } = createFakeClient(
+      jsonResponse({ id: applicationId }),
+    )
+    const repository = createApplicationManagementRepository({ client, userId })
+
+    await expect(repository.delete(applicationId)).resolves.toBe(applicationId)
+
+    const request = getRequest(fetchMock)
+
+    expect(request.init?.method).toBe('DELETE')
+    expect(request.url.pathname).toBe('/rest/v1/applications')
+    expect(request.url.searchParams.get('select')).toBe('id')
+    expect(request.url.searchParams.get('user_id')).toBe(`eq.${userId}`)
+    expect(request.url.searchParams.get('id')).toBe(`eq.${applicationId}`)
+  })
+
+  it('returns null when no owner-visible application can be deleted', async () => {
+    const { client } = createFakeClient(jsonResponse(null))
+    const repository = createApplicationManagementRepository({ client, userId })
+
+    await expect(repository.delete(applicationId)).resolves.toBeNull()
+  })
+
   it('updates only supplied mutable fields with owner scoping', async () => {
     const update: UpdateApplicationRecord = {
       appliedOn: '2026-08-20',
@@ -332,6 +356,10 @@ describe('application management repository', () => {
     {
       operation: 'create-application',
       run: (repository) => repository.create(createRecord),
+    },
+    {
+      operation: 'delete-application',
+      run: (repository) => repository.delete(applicationId),
     },
     {
       operation: 'find-application',
