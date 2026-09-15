@@ -5,6 +5,7 @@ import type { Ref } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ApplicationEditingForm from '~/components/applications/ApplicationEditingForm.vue'
+import ApplicationDeletionDialog from '~/components/applications/ApplicationDeletionDialog.vue'
 import ApplicationDetailPage from '~/pages/applications/[id].vue'
 import type { ApplicationEditingState } from '~/composables/useApplicationEditing'
 import type { UpdateApplicationRequest } from '~~/shared/applications/management'
@@ -15,6 +16,7 @@ import type {
 import type { BaseResumesManagementViewModel } from '~~/shared/base-resumes/view-model'
 
 const mocks = vi.hoisted(() => ({
+  clearNuxtData: vi.fn(),
   navigateTo: vi.fn(),
   onBeforeRouteLeave: vi.fn(),
   refreshApplication: vi.fn(),
@@ -29,6 +31,7 @@ const mocks = vi.hoisted(() => ({
 }))
 
 mockNuxtImport('navigateTo', () => mocks.navigateTo)
+mockNuxtImport('clearNuxtData', () => mocks.clearNuxtData)
 mockNuxtImport('onBeforeRouteLeave', () => mocks.onBeforeRouteLeave)
 mockNuxtImport('useApplicationEditing', () => mocks.useApplicationEditing)
 mockNuxtImport('useBaseResumes', () => mocks.useBaseResumes)
@@ -252,6 +255,42 @@ describe('application detail page', () => {
     expect(mocks.retryEditing).toHaveBeenCalledOnce()
     expect(applicationData.value).toEqual({ application: updatedApplication })
     expect(mocks.resetEditing).toHaveBeenCalledTimes(3)
+  })
+
+  it('opens deletion only from the page, then clears trusted collection caches after confirmation', async () => {
+    const wrapper = await mountSuspended(ApplicationDetailPage)
+
+    await getButton(wrapper, 'Delete application').trigger('click')
+
+    const deletionDialog = wrapper.getComponent(ApplicationDeletionDialog)
+    expect(deletionDialog.props('open')).toBe(true)
+    expect(deletionDialog.props('application')).toEqual(application)
+    expect(deletionDialog.props('hasUnsavedChanges')).toBe(false)
+
+    deletionDialog.vm.$emit('deleted', applicationId)
+    await flushPromises()
+
+    expect(mocks.resetEditing).toHaveBeenCalledOnce()
+    expect(mocks.clearNuxtData).toHaveBeenNthCalledWith(1, 'applications-list')
+    expect(mocks.clearNuxtData).toHaveBeenNthCalledWith(2, 'dashboard')
+    expect(mocks.navigateTo).toHaveBeenCalledWith('/applications', {
+      replace: true,
+    })
+  })
+
+  it('makes unsaved edits explicit in the deletion confirmation without saving them', async () => {
+    const wrapper = await mountSuspended(ApplicationDetailPage)
+    const form = wrapper.getComponent(ApplicationEditingForm)
+
+    form.vm.$emit('dirty-changed', true)
+    await getButton(wrapper, 'Delete application').trigger('click')
+
+    expect(
+      wrapper
+        .getComponent(ApplicationDeletionDialog)
+        .props('hasUnsavedChanges'),
+    ).toBe(true)
+    expect(mocks.saveApplication).not.toHaveBeenCalled()
   })
 
   it('reloads trusted state after an uncertain or conflicting save', async () => {

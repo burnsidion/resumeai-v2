@@ -5,7 +5,8 @@ schema and RLS policies. OWL-22 connects the dashboard to that boundary, while
 OWL-30 adds a dedicated Base Resumes management read without widening the
 dashboard preview contract. OWL-39 adds the first application-management server
 boundary for creating, listing, loading, and updating the authenticated user's
-applications.
+applications. OWL-44 adds permanent aggregate deletion without widening browser
+data access.
 
 ## Ownership and dependency direction
 
@@ -117,6 +118,8 @@ The application-management API exposes these authenticated server operations:
   representation.
 - `GET /api/applications/:id` loads one owner-visible application.
 - `PATCH /api/applications/:id` updates only the approved mutable fields.
+- `DELETE /api/applications/:id` permanently deletes one owner-visible
+  application aggregate and returns only its confirmed identifier.
 
 Each request creates one cookie-aware Supabase client, resolves the trusted Auth
 subject, and passes that client and subject identifier through the service and
@@ -145,6 +148,16 @@ After confirmed creation, the browser navigates to `/applications/:id`. The
 temporary confirmation view reloads that application through the existing
 owner-scoped detail endpoint, so refresh and direct navigation never depend on
 transient client state.
+
+Deletion is intentionally separate from editing. The deletion composable sends
+one relative `DELETE` request, validates the narrow `{ application: { id } }`
+response, and only retries explicitly transient authentication or availability
+failures. It does not issue a compensating request after an uncertain result.
+The application-specific confirmation dialog owns keyboard focus, pending, and
+sanitized recovery presentation; the detail page owns opening it, invalidating
+the existing applications-list and dashboard read caches after success, and
+navigating to `/applications`. Missing and cross-owner identifiers remain one
+neutral unavailable response. No browser component receives a Supabase client.
 
 OWL-41 renders the authenticated `/applications` workspace from the existing
 owner-scoped collection endpoint. `useApplications` owns the relative request

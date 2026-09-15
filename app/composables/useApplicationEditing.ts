@@ -154,6 +154,7 @@ const createEndpointFailure = ({
         retryable: false,
       }
     case 'application-save-unavailable':
+    case 'application-deletion-unavailable':
       return createUnconfirmedFailure(code)
     case 'applications-unavailable':
       return createUnconfirmedFailure(code)

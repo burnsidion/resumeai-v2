@@ -10,6 +10,7 @@ import {
   MAXIMUM_APPLICATION_ROLE_LENGTH,
 } from '../../shared/applications/constraints'
 import { applicationManagementEndpointErrorCodeSchema } from '../../shared/applications/errors'
+import { deleteApplicationResponseSchema } from '../../shared/applications/deletion'
 import {
   applicationManagementDataSchema,
   applicationReadinessSchema,
@@ -182,6 +183,22 @@ describe('application management input contracts', () => {
 })
 
 describe('application management product contracts', () => {
+  it('accepts only a narrow application deletion confirmation', () => {
+    expect(
+      deleteApplicationResponseSchema.parse({
+        application: { id: '4120cbac-ebf4-4580-8988-3fbc65ca9449' },
+      }),
+    ).toEqual({
+      application: { id: '4120cbac-ebf4-4580-8988-3fbc65ca9449' },
+    })
+
+    expect(
+      deleteApplicationResponseSchema.safeParse({
+        application: { id: 'not-a-uuid' },
+      }).success,
+    ).toBe(false)
+  })
+
   it('owns one approved status vocabulary without making dashboard its source', () => {
     expect(APPLICATION_STATUSES).toEqual([
       'draft',

@@ -729,12 +729,57 @@ test('manages only the authenticated owner applications through the Nuxt server'
     await expect(mobileNavigation).toBeHidden()
     await expectNoHorizontalOverflow(page)
 
+    await page.setViewportSize({ height: 1000, width: 1440 })
+    await page.goto(`/applications/${createdApplicationId}`, {
+      waitUntil: 'networkidle',
+    })
+    await expect(
+      page.getByRole('heading', { name: 'Staff Product Engineer' }),
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Delete application' }).click()
+    const deletionDialog = page.getByRole('dialog', {
+      name: 'Delete this application?',
+    })
+    await expect(deletionDialog).toContainText('This cannot be undone')
+    await expect(deletionDialog).toContainText(
+      'original base resume stays untouched',
+    )
+    await deletionDialog.getByRole('button', { name: 'Cancel' }).click()
+    await expect(deletionDialog).toBeHidden()
+    await expect(
+      page.getByRole('heading', { name: 'Staff Product Engineer' }),
+    ).toBeVisible()
+
+    await page.getByRole('button', { name: 'Delete application' }).click()
+    await deletionDialog
+      .getByRole('button', { name: 'Delete application' })
+      .click()
+    await expect(page).toHaveURL(/\/applications$/)
+    await expect(
+      page.getByRole('link', {
+        name: 'Open Staff Product Engineer at Aurora Product Works',
+      }),
+    ).toHaveCount(0)
+
+    await expectEndpointFailure(
+      await context.request.get(
+        applicationDetailUrl(createdApplicationId ?? ''),
+      ),
+      { code: 'application-unavailable', status: 404 },
+    )
+
+    await page.goto('/dashboard', { waitUntil: 'networkidle' })
+    await expect(
+      page.getByText('Staff Product Engineer', { exact: true }),
+    ).toHaveCount(0)
+
     const persistedListResponse = await context.request.get(applicationsUrl)
     const persistedList = applicationListViewModelSchema.parse(
       await persistedListResponse.json(),
     )
 
-    expect(persistedList.applications).toContainEqual(
+    expect(persistedList.applications).not.toContainEqual(
       expect.objectContaining({
         company: 'Aurora Product Works',
         id: createdApplicationId,

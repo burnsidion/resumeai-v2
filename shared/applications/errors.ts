@@ -1,6 +1,7 @@
 import { z } from 'zod'
 
 export const applicationManagementEndpointErrorCodeSchema = z.enum([
+  'application-deletion-unavailable',
   'application-save-unavailable',
   'application-update-conflict',
   'application-unavailable',

@@ -278,6 +278,31 @@ export async function listApplications(
   return applications.map(toApplicationManagementData)
 }
 
+export async function deleteApplication(
+  context: ProductDataRepositoryContext,
+  id: string,
+  dependencies: ApplicationManagementServiceDependencies = defaultDependencies,
+): Promise<string> {
+  const repository = createApplicationRepository(context, dependencies)
+  let deletedId: string | null
+
+  try {
+    deletedId = await repository.delete(id)
+  } catch (error) {
+    throw createServiceError('persistence-unavailable', error)
+  }
+
+  if (deletedId === null) {
+    throw createServiceError('application-unavailable')
+  }
+
+  if (deletedId !== id) {
+    throw createServiceError('inconsistent-state')
+  }
+
+  return deletedId
+}
+
 export async function loadApplication(
   context: ProductDataRepositoryContext,
   id: string,
