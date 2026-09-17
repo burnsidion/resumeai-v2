@@ -351,6 +351,10 @@ another resume.
 
 ## 7. AI tailoring and trust boundaries
 
+The detailed MVP contracts for interpretation, source evidence, analysis,
+working-copy proposals, validation, and provider privacy are defined in
+[Tailoring contracts](tailoring-contracts.md).
+
 AI tailoring begins only after an explicit user request on an application with
 an accessible base resume.
 
