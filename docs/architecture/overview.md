@@ -654,29 +654,18 @@ infrastructure and delivery mechanisms toward product behavior.
   target architecture.
 - Each responsibility has one clear owner.
 
-## 15. Remaining deployment-related decision
+## 15. Deployment runtime and PDF capability decision
 
-The deployment platform and runtime must be selected before implementing PDF
-parsing and rendering.
+ResumAI V2's intended MVP runtime is a Railway persistent service built from a
+repository-controlled Dockerfile. The detailed operating contract, local and CI
+parity expectations, and deliberately deferred decisions are documented in
+[Deployment runtime](../development/deployment-runtime.md).
 
-The evaluation must confirm:
-
-- supported Node runtime;
-- compatibility with required parsing and rendering libraries;
-- availability of required native binaries and fonts;
-- memory and request-duration limits;
-- request and response payload limits;
-- temporary filesystem behavior;
-- deployment-package size;
-- concurrency and cost characteristics;
-- operational logging and timeout behavior.
-
-This decision does not block repository initialization, Nuxt configuration,
-TypeScript, Tailwind, testing infrastructure, CI, documentation, or general
-client/server ownership boundaries.
-
-It does block committing to specific PDF parsing and rendering libraries or
-designing workflows around unverified runtime limits.
+This decision unblocks work that needs a container-compatible Node runtime. It
+does not select PDF libraries, establish exact resource limits, create a
+Railway service, or deploy the application. Parser and renderer tickets must
+validate their chosen tooling against this runtime contract rather than assume
+the uploaded PDF's visual layout can be edited in place.
 
 ## 16. Smallest safe first implementation slice
 
