@@ -107,3 +107,4 @@ intentionally absent from this foundation.
 - [Product data access](docs/development/product-data.md)
 - [Supabase Auth setup](docs/development/supabase-auth.md)
 - [Upload UI foundation](docs/development/upload-ui.md)
+- [OpenAI tailoring provider](docs/development/openai-tailoring.md)
