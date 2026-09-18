@@ -178,6 +178,20 @@ export function createResumeInterpretationStructuredContent(
   })
 }
 
+export async function calculateResumeSourceSha256(
+  bytes: Uint8Array,
+): Promise<string> {
+  const ownedBytes = new Uint8Array(bytes.byteLength)
+
+  ownedBytes.set(bytes)
+
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', ownedBytes)
+
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('')
+}
+
 export async function calculateResumeInterpretationSha256(
   content: ResumeInterpretationStructuredContent,
 ): Promise<string> {
@@ -203,9 +217,5 @@ export async function calculateResumeInterpretationSha256(
     })),
   })
   const bytes = new TextEncoder().encode(serialized)
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', bytes)
-
-  return Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, '0'),
-  ).join('')
+  return calculateResumeSourceSha256(bytes)
 }
