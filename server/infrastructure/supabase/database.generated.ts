@@ -253,6 +253,38 @@ export type Database = {
           },
         ]
       }
+      tailoring_operations: {
+        Row: {
+          application_id: string
+          created_at: string
+          id: string
+          lease_expires_at: string
+          user_id: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          id?: string
+          lease_expires_at: string
+          user_id: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          id?: string
+          lease_expires_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tailoring_operations_application_fkey'
+            columns: ['application_id', 'user_id']
+            isOneToOne: false
+            referencedRelation: 'applications'
+            referencedColumns: ['id', 'user_id']
+          },
+        ]
+      }
       working_copies: {
         Row: {
           accepted_at: string | null

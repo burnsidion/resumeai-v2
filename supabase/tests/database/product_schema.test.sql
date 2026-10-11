@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(19);
+select plan(24);
 
 select has_table('public', 'base_resumes', 'base_resumes exists');
 select has_table(
@@ -14,6 +14,11 @@ select has_table(
 select has_table('public', 'applications', 'applications exists');
 select has_table('public', 'working_copies', 'working_copies exists');
 select has_table('public', 'finalized_resumes', 'finalized_resumes exists');
+select has_table(
+  'public',
+  'tailoring_operations',
+  'tailoring_operations exists'
+);
 select hasnt_table('public', 'profiles', 'profiles remains outside the product schema');
 
 select is(
@@ -65,6 +70,11 @@ select has_pk(
   'public',
   'finalized_resumes',
   'finalized_resumes has a primary key'
+);
+select has_pk(
+  'public',
+  'tailoring_operations',
+  'tailoring_operations has a primary key'
 );
 
 select ok(
@@ -118,6 +128,36 @@ select ok(
       and conrelid = 'public.applications'::regclass
   ),
   'an application can reference an exact finalized submission artifact'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'tailoring_operations_application_id_key'
+      and conrelid = 'public.tailoring_operations'::regclass
+  ),
+  'an application can have at most one in-progress tailoring operation'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'tailoring_operations_application_fkey'
+      and conrelid = 'public.tailoring_operations'::regclass
+  ),
+  'a tailoring operation follows the exact application ownership path'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'tailoring_operations_lease_duration_check'
+      and conrelid = 'public.tailoring_operations'::regclass
+  ),
+  'a tailoring operation has a bounded lease'
 );
 
 select * from finish();
