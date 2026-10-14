@@ -52,6 +52,13 @@ export const tailoringWorkingCopyProvenanceSchema = z
   })
   .strict()
 
+export const tailoringWorkingCopyProviderMetadataSchema =
+  tailoringWorkingCopyProvenanceSchema.pick({
+    modelName: true,
+    promptVersion: true,
+    providerName: true,
+  })
+
 export type TailoringWorkingCopyProposal = z.infer<
   typeof tailoringWorkingCopyProposalSchema
 >
@@ -61,6 +68,9 @@ export type TailoringWorkingCopyRequest = z.infer<
 export type TailoringWorkingCopyProvenance = z.infer<
   typeof tailoringWorkingCopyProvenanceSchema
 >
+export type TailoringWorkingCopyProviderMetadata = z.infer<
+  typeof tailoringWorkingCopyProviderMetadataSchema
+>
 
 export interface TailoringWorkingCopyProviderInput {
   analysis: TailoringAnalysis
@@ -69,6 +79,7 @@ export interface TailoringWorkingCopyProviderInput {
 }
 
 export interface TailoringWorkingCopyProvider {
+  readonly metadata: TailoringWorkingCopyProviderMetadata
   propose(
     request: TailoringWorkingCopyRequest,
   ): Promise<TailoringWorkingCopyProposal>

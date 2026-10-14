@@ -1,20 +1,16 @@
 import {
-  createTailoringAnalysisRequest,
   type TailoringAnalysis,
   type TailoringAnalysisProvider,
   TailoringAnalysisValidationError,
   validateTailoringAnalysis,
 } from '../domain/tailoring/analysis'
 import { createConfiguredOpenAiTailoringAnalysisProvider } from '../infrastructure/openai/tailoring-analysis-provider'
-import {
-  createApplicationManagementRepository,
-  type ApplicationManagementRepository,
-} from '../repositories/application-management'
 import type { ProductDataRepositoryContext } from '../repositories/product-data/context'
 import {
-  ensureResumeInterpretation,
-  EnsureResumeInterpretationServiceError,
-} from './ensure-resume-interpretation'
+  prepareApplicationTailoring,
+  PrepareApplicationTailoringError,
+  type PreparedApplicationTailoring,
+} from './prepare-application-tailoring'
 
 export type AnalyzeApplicationTailoringErrorKind =
   | 'application-not-ready'
@@ -37,20 +33,16 @@ export class AnalyzeApplicationTailoringError extends Error {
 }
 
 export interface AnalyzeApplicationTailoringDependencies {
-  createApplicationRepository(
-    context: ProductDataRepositoryContext,
-  ): ApplicationManagementRepository
   createProvider(): TailoringAnalysisProvider
-  ensureInterpretation(
+  prepare(
     context: ProductDataRepositoryContext,
     applicationId: string,
-  ): ReturnType<typeof ensureResumeInterpretation>
+  ): ReturnType<typeof prepareApplicationTailoring>
 }
 
 const defaultDependencies: AnalyzeApplicationTailoringDependencies = {
-  createApplicationRepository: createApplicationManagementRepository,
   createProvider: createConfiguredOpenAiTailoringAnalysisProvider,
-  ensureInterpretation: ensureResumeInterpretation,
+  prepare: prepareApplicationTailoring,
 }
 
 const createServiceError = (
@@ -59,25 +51,58 @@ const createServiceError = (
 ): AnalyzeApplicationTailoringError =>
   new AnalyzeApplicationTailoringError(kind, cause)
 
-const isReadyForTailoring = (
-  application: Awaited<ReturnType<ApplicationManagementRepository['findById']>>,
-): application is NonNullable<
-  Awaited<ReturnType<ApplicationManagementRepository['findById']>>
-> =>
-  application !== null &&
-  application.jobDescription !== null &&
-  application.jobDescription.trim().length > 0 &&
-  application.selectedBaseResume !== null &&
-  application.selectedBaseResume.activeSlot !== null &&
-  application.selectedBaseResume.retiredAt === null
+const mapPreparationError = (
+  error: unknown,
+): AnalyzeApplicationTailoringError => {
+  if (!(error instanceof PrepareApplicationTailoringError)) {
+    return createServiceError('unexpected-failure', error)
+  }
 
-const createApplicationRepository = (
-  context: ProductDataRepositoryContext,
-  dependencies: AnalyzeApplicationTailoringDependencies,
-): ApplicationManagementRepository => {
+  if (error.kind === 'application-not-ready') {
+    return createServiceError('application-not-ready', error)
+  }
+
+  if (error.kind === 'application-unavailable') {
+    return createServiceError('application-unavailable', error)
+  }
+
+  if (error.kind === 'interpretation-unavailable') {
+    return createServiceError('interpretation-unavailable', error)
+  }
+
+  return createServiceError('unexpected-failure', error)
+}
+
+export async function analyzePreparedApplicationTailoring(
+  preparation: PreparedApplicationTailoring,
+  createProvider: () => TailoringAnalysisProvider,
+): Promise<TailoringAnalysis> {
+  let provider: TailoringAnalysisProvider
+
   try {
-    return dependencies.createApplicationRepository(context)
+    provider = createProvider()
   } catch (error) {
+    throw createServiceError('provider-unavailable', error)
+  }
+
+  let analysis: TailoringAnalysis
+
+  try {
+    analysis = await provider.analyze(preparation.analysisRequest)
+  } catch (error) {
+    throw createServiceError('provider-unavailable', error)
+  }
+
+  try {
+    return validateTailoringAnalysis(
+      analysis,
+      preparation.interpretation.structuredContent,
+    )
+  } catch (error) {
+    if (error instanceof TailoringAnalysisValidationError) {
+      throw createServiceError('analysis-invalid', error)
+    }
+
     throw createServiceError('unexpected-failure', error)
   }
 }
@@ -87,72 +112,16 @@ export async function analyzeApplicationTailoring(
   applicationId: string,
   dependencies: AnalyzeApplicationTailoringDependencies = defaultDependencies,
 ): Promise<TailoringAnalysis> {
-  const applicationRepository = createApplicationRepository(
-    context,
-    dependencies,
-  )
-
-  let application: Awaited<
-    ReturnType<ApplicationManagementRepository['findById']>
-  >
-
   try {
-    application = await applicationRepository.findById(applicationId)
-  } catch (error) {
-    throw createServiceError('unexpected-failure', error)
-  }
-
-  if (application === null) {
-    throw createServiceError('application-unavailable')
-  }
-
-  if (!isReadyForTailoring(application)) {
-    throw createServiceError('application-not-ready')
-  }
-
-  let interpretation: Awaited<ReturnType<typeof ensureResumeInterpretation>>
-
-  try {
-    interpretation = await dependencies.ensureInterpretation(
-      context,
-      applicationId,
+    return await analyzePreparedApplicationTailoring(
+      await dependencies.prepare(context, applicationId),
+      dependencies.createProvider,
     )
   } catch (error) {
-    if (error instanceof EnsureResumeInterpretationServiceError) {
-      throw createServiceError('interpretation-unavailable', error)
+    if (error instanceof AnalyzeApplicationTailoringError) {
+      throw error
     }
 
-    throw createServiceError('unexpected-failure', error)
-  }
-
-  const request = createTailoringAnalysisRequest({
-    jobDescription: application.jobDescription,
-    sourceResume: interpretation.structuredContent,
-  })
-
-  let provider: TailoringAnalysisProvider
-
-  try {
-    provider = dependencies.createProvider()
-  } catch (error) {
-    throw createServiceError('provider-unavailable', error)
-  }
-
-  let analysis: TailoringAnalysis
-
-  try {
-    analysis = await provider.analyze(request)
-  } catch (error) {
-    throw createServiceError('provider-unavailable', error)
-  }
-
-  try {
-    return validateTailoringAnalysis(analysis, interpretation.structuredContent)
-  } catch (error) {
-    if (error instanceof TailoringAnalysisValidationError) {
-      throw createServiceError('analysis-invalid', error)
-    }
-
-    throw createServiceError('unexpected-failure', error)
+    throw mapPreparationError(error)
   }
 }

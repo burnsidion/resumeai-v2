@@ -21,6 +21,10 @@ import {
   RESUME_INTERPRETER_VERSION,
   resumeInterpretationStructuredContentSchema,
 } from '../../server/domain/resume-interpretations/contracts'
+import {
+  prepareApplicationTailoring,
+  type PrepareApplicationTailoringDependencies,
+} from '../../server/services/prepare-application-tailoring'
 import { syntheticTailoringFixture } from '../fixtures/tailoring'
 
 const userId = '22b1b8e1-cee9-4ca9-ab65-96e1f039e8b0'
@@ -85,12 +89,13 @@ const validAnalysis = tailoringAnalysisSchema.parse({
 const createDependencies = (
   overrides: {
     application?: ApplicationPersistenceRecord | null
-    ensureInterpretation?: AnalyzeApplicationTailoringDependencies['ensureInterpretation']
+    ensureInterpretation?: PrepareApplicationTailoringDependencies['ensureInterpretation']
     provider?: Partial<TailoringAnalysisProvider>
   } = {},
 ): {
   applicationRepository: ApplicationManagementRepository
   dependencies: AnalyzeApplicationTailoringDependencies
+  ensureInterpretation: ReturnType<typeof vi.fn>
   provider: TailoringAnalysisProvider
 } => {
   const applicationRepository = {
@@ -102,14 +107,19 @@ const createDependencies = (
     analyze: vi.fn(async () => validAnalysis),
     ...overrides.provider,
   } satisfies TailoringAnalysisProvider
+  const ensureInterpretation =
+    overrides.ensureInterpretation ?? vi.fn(async () => interpretation)
   const dependencies = {
-    createApplicationRepository: vi.fn(() => applicationRepository),
     createProvider: vi.fn(() => provider),
-    ensureInterpretation:
-      overrides.ensureInterpretation ?? vi.fn(async () => interpretation),
+    prepare: vi.fn((candidateContext, candidateApplicationId) =>
+      prepareApplicationTailoring(candidateContext, candidateApplicationId, {
+        createApplicationRepository: () => applicationRepository,
+        ensureInterpretation,
+      }),
+    ),
   } satisfies AnalyzeApplicationTailoringDependencies
 
-  return { applicationRepository, dependencies, provider }
+  return { applicationRepository, dependencies, ensureInterpretation, provider }
 }
 
 const expectServiceError = async (
@@ -134,16 +144,14 @@ const expectServiceError = async (
 
 describe('application tailoring analysis service', () => {
   it('coordinates the exact owned application, interpretation, provider, and source validation', async () => {
-    const { dependencies, provider } = createDependencies()
+    const { dependencies, ensureInterpretation, provider } =
+      createDependencies()
 
     await expect(
       analyzeApplicationTailoring(context, applicationId, dependencies),
     ).resolves.toEqual(validAnalysis)
 
-    expect(dependencies.ensureInterpretation).toHaveBeenCalledWith(
-      context,
-      applicationId,
-    )
+    expect(ensureInterpretation).toHaveBeenCalledWith(context, applicationId)
     expect(provider.analyze).toHaveBeenCalledWith({
       jobDescription: application.jobDescription,
       sourceResume,
@@ -163,16 +171,17 @@ describe('application tailoring analysis service', () => {
         'application-not-ready',
       ],
     ] as const) {
-      const { dependencies, provider } = createDependencies({
-        application: candidate,
-      })
+      const { dependencies, ensureInterpretation, provider } =
+        createDependencies({
+          application: candidate,
+        })
 
       await expectServiceError(
         () => analyzeApplicationTailoring(context, applicationId, dependencies),
         kind,
       )
 
-      expect(dependencies.ensureInterpretation).not.toHaveBeenCalled()
+      expect(ensureInterpretation).not.toHaveBeenCalled()
       expect(provider.analyze).not.toHaveBeenCalled()
     }
   })
