@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(52);
+select plan(58);
 
 insert into auth.users (id, email)
 values
@@ -246,6 +246,26 @@ where id in (
   '30000000-0000-4000-8000-000000000002'
 );
 
+insert into public.tailoring_operations (
+  id,
+  user_id,
+  application_id,
+  lease_expires_at
+)
+values
+  (
+    '60000000-0000-4000-8000-000000000001',
+    '00000000-0000-4000-8000-000000000001',
+    '30000000-0000-4000-8000-000000000001',
+    now() + interval '2 minutes'
+  ),
+  (
+    '60000000-0000-4000-8000-000000000002',
+    '00000000-0000-4000-8000-000000000002',
+    '30000000-0000-4000-8000-000000000002',
+    now() + interval '2 minutes'
+  );
+
 select is(
   (
     select count(*)::integer
@@ -257,12 +277,13 @@ select is(
         'resume_interpretations',
         'applications',
         'working_copies',
-        'finalized_resumes'
+        'finalized_resumes',
+        'tailoring_operations'
       )
       and pg_class.relrowsecurity
   ),
-  5,
-  'RLS is enabled on all five product tables'
+  6,
+  'RLS is enabled on all product tables'
 );
 
 select is(
@@ -275,10 +296,11 @@ select is(
         'resume_interpretations',
         'applications',
         'working_copies',
-        'finalized_resumes'
+        'finalized_resumes',
+        'tailoring_operations'
       )
   ),
-  15,
+  19,
   'the product tables have only the required operation policies'
 );
 
@@ -292,7 +314,8 @@ select ok(
         'resume_interpretations',
         'applications',
         'working_copies',
-        'finalized_resumes'
+        'finalized_resumes',
+        'tailoring_operations'
       )
       and roles <> array['authenticated']::name[]
   ),
@@ -309,7 +332,8 @@ select ok(
         'resume_interpretations',
         'applications',
         'working_copies',
-        'finalized_resumes'
+        'finalized_resumes',
+        'tailoring_operations'
       )
       and coalesce(qual, with_check, '') not like '%auth.uid()%'
   ),
@@ -324,7 +348,8 @@ select ok(
       'resume_interpretations',
       'applications',
       'working_copies',
-      'finalized_resumes'
+      'finalized_resumes',
+      'tailoring_operations'
     ]) as product_table(table_name)
     cross join unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE'])
       as operation(privilege_name)
@@ -345,7 +370,8 @@ select ok(
       'resume_interpretations',
       'applications',
       'working_copies',
-      'finalized_resumes'
+      'finalized_resumes',
+      'tailoring_operations'
     ]) as product_table(table_name)
     cross join unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE'])
       as operation(privilege_name)
@@ -377,7 +403,8 @@ select ok(
       'resume_interpretations',
       'applications',
       'working_copies',
-      'finalized_resumes'
+      'finalized_resumes',
+      'tailoring_operations'
     ]) as product_table(table_name)
   ),
   'authenticated has select and insert grants on every product table'
@@ -419,6 +446,18 @@ select ok(
     'public.working_copies',
     'application_id',
     'UPDATE'
+  )
+  and has_column_privilege(
+    'authenticated',
+    'public.tailoring_operations',
+    'lease_expires_at',
+    'UPDATE'
+  )
+  and not has_column_privilege(
+    'authenticated',
+    'public.tailoring_operations',
+    'application_id',
+    'UPDATE'
   ),
   'authenticated update grants are limited to mutable columns'
 );
@@ -426,6 +465,11 @@ select ok(
 select ok(
   has_table_privilege('authenticated', 'public.applications', 'DELETE')
   and has_table_privilege('authenticated', 'public.working_copies', 'DELETE')
+  and has_table_privilege(
+    'authenticated',
+    'public.tailoring_operations',
+    'DELETE'
+  )
   and not has_table_privilege(
     'authenticated',
     'public.base_resumes',
@@ -454,10 +498,11 @@ select is(
         'resume_interpretations_user_id_idx',
         'applications_user_updated_at_idx',
         'working_copies_user_id_idx',
-        'finalized_resumes_user_id_idx'
+        'finalized_resumes_user_id_idx',
+        'tailoring_operations_user_lease_expires_at_idx'
       )
   ),
-  5,
+  6,
   'each product table retains an ownership-leading index'
 );
 
@@ -530,6 +575,12 @@ select is(
 );
 
 select is(
+  (select count(*)::integer from public.tailoring_operations),
+  1,
+  'an authenticated user sees only their in-progress tailoring operations'
+);
+
+select is(
   (
     select count(*)::integer
     from public.base_resumes
@@ -577,6 +628,16 @@ select is(
   ),
   0,
   'another user''s finalized resume is hidden'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.tailoring_operations
+    where id = '60000000-0000-4000-8000-000000000002'
+  ),
+  0,
+  'another user''s tailoring operation is hidden'
 );
 
 select lives_ok(
@@ -723,6 +784,24 @@ select throws_ok(
 
 select throws_ok(
   $$
+    insert into public.tailoring_operations (
+      user_id,
+      application_id,
+      lease_expires_at
+    )
+    values (
+      '00000000-0000-4000-8000-000000000001',
+      '30000000-0000-4000-8000-000000000004',
+      now() + interval '2 minutes'
+    )
+  $$,
+  '23503',
+  null,
+  'a tailoring operation cannot attach another owner''s application'
+);
+
+select throws_ok(
+  $$
     insert into public.finalized_resumes (
       user_id,
       application_id,
@@ -859,6 +938,28 @@ select results_eq(
 
 select results_eq(
   $$
+    update public.tailoring_operations
+    set lease_expires_at = now() + interval '3 minutes'
+    where id = '60000000-0000-4000-8000-000000000001'
+    returning 1
+  $$,
+  $$values (1)$$,
+  'an owner can renew their current tailoring operation lease'
+);
+
+select throws_ok(
+  $$
+    update public.tailoring_operations
+    set application_id = '30000000-0000-4000-8000-000000000003'
+    where id = '60000000-0000-4000-8000-000000000001'
+  $$,
+  '42501',
+  null,
+  'tailoring-operation ownership cannot be reassigned'
+);
+
+select results_eq(
+  $$
     update public.working_copies
     set revision_number = revision_number + 1,
         updated_at = now()
@@ -984,6 +1085,16 @@ select is(
   ),
   0,
   'application deletion removes its dependent working copy'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from public.tailoring_operations
+    where id = '60000000-0000-4000-8000-000000000001'
+  ),
+  0,
+  'application deletion clears its current tailoring operation'
 );
 
 select is(
