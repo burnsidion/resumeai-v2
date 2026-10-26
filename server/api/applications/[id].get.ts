@@ -7,6 +7,10 @@ import {
   loadApplication,
 } from '../../services/application-management'
 import {
+  ApplicationTailoringStatusServiceError,
+  loadApplicationTailoringStatus,
+} from '../../services/application-tailoring-status'
+import {
   createAuthenticationServerClient,
   markAuthenticationResponsePrivate,
 } from '../../utils/authentication/supabase'
@@ -85,11 +89,23 @@ export default defineEventHandler(
         { client, userId: authentication.user.id },
         parsedId.data,
       )
+      const tailoring = await loadApplicationTailoringStatus(
+        { client, userId: authentication.user.id },
+        application,
+      )
 
-      return createApplicationDetailResponse(application)
+      return createApplicationDetailResponse(application, tailoring)
     } catch (error) {
       if (error instanceof ApplicationManagementServiceError) {
         throw toLoadServiceEndpointError(error)
+      }
+
+      if (error instanceof ApplicationTailoringStatusServiceError) {
+        throw createApplicationDetailEndpointError(
+          'applications-unavailable',
+          503,
+          'Applications are temporarily unavailable.',
+        )
       }
 
       throw createApplicationDetailEndpointError(

@@ -38,6 +38,7 @@ const minimalResponse: ApplicationDetailResponse = {
     },
     role: minimalInput.role,
     selectedBaseResume: null,
+    tailoring: { state: 'not-ready' },
     status: 'draft',
     statusLabel: 'Draft',
     statusTone: 'neutral',

@@ -27,7 +27,9 @@ export interface AcquireTailoringOperationRecord {
 }
 
 export type TailoringOperationsRepositoryOperation =
-  'acquire-tailoring-operation' | 'release-tailoring-operation'
+  | 'acquire-tailoring-operation'
+  | 'find-active-tailoring-operation'
+  | 'release-tailoring-operation'
 
 export type TailoringOperationsRepositoryErrorKind =
   'provider-failure' | 'unexpected-result'
@@ -48,6 +50,10 @@ export class TailoringOperationsRepositoryError extends Error {
 export interface TailoringOperationsRepository {
   acquire(
     record: AcquireTailoringOperationRecord,
+  ): Promise<TailoringOperation | null>
+  findActive(
+    applicationId: string,
+    now: string,
   ): Promise<TailoringOperation | null>
   release(id: string): Promise<void>
 }
@@ -130,6 +136,38 @@ export function createTailoringOperationsRepository({
         }
 
         throw createRepositoryError('acquire-tailoring-operation', error)
+      }
+    },
+
+    async findActive(applicationId, now) {
+      try {
+        const { data, error } = await client
+          .from('tailoring_operations')
+          .select(operationProjection)
+          .eq('user_id', userId)
+          .eq('application_id', applicationId)
+          .gt('lease_expires_at', now)
+          .maybeSingle()
+
+        if (error) {
+          throw error
+        }
+
+        try {
+          return data === null ? null : parseOperation(data)
+        } catch (error) {
+          throw createRepositoryError(
+            'find-active-tailoring-operation',
+            error,
+            'unexpected-result',
+          )
+        }
+      } catch (error) {
+        if (error instanceof TailoringOperationsRepositoryError) {
+          throw error
+        }
+
+        throw createRepositoryError('find-active-tailoring-operation', error)
       }
     },
 

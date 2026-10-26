@@ -9,6 +9,9 @@ import {
   createApplicationDetailResponse,
   createApplicationListViewModel,
 } from '../../server/presentation/application-management-view-model'
+import type { ApplicationTailoringState } from '../../shared/tailoring/status'
+
+const readyTailoring: ApplicationTailoringState = { state: 'ready' }
 
 const createApplication = (
   overrides: Partial<ApplicationManagementData> = {},
@@ -63,7 +66,10 @@ describe('application management presentation mapper', () => {
   })
 
   it('maps the complete safe detail representation', () => {
-    const response = createApplicationDetailResponse(createApplication())
+    const response = createApplicationDetailResponse(
+      createApplication(),
+      readyTailoring,
+    )
 
     expect(applicationDetailResponseSchema.parse(response)).toEqual(response)
     expect(response.application).toMatchObject({
@@ -75,6 +81,7 @@ describe('application management presentation mapper', () => {
         filename: 'Frontend Engineering.pdf',
         isAvailable: true,
       },
+      tailoring: readyTailoring,
       updatedLabel: 'Aug 20, 2026',
     })
     expect(response.application).not.toHaveProperty('userId')
@@ -98,6 +105,7 @@ describe('application management presentation mapper', () => {
           retiredAt: '2026-08-21T18:00:00+00:00',
         },
       }),
+      { state: 'not-ready' },
     )
 
     expect(response.application.selectedBaseResume).toEqual({
@@ -125,6 +133,7 @@ describe('application management presentation mapper', () => {
         },
         selectedBaseResume: null,
       }),
+      { state: 'not-ready' },
     )
 
     expect(detail.application.readiness).toMatchObject({

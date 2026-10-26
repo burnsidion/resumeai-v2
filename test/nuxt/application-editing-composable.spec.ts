@@ -39,6 +39,7 @@ const response: ApplicationDetailResponse = {
     },
     role: input.role ?? '',
     selectedBaseResume: null,
+    tailoring: { state: 'not-ready' },
     status: input.status ?? 'draft',
     statusLabel: 'Interviewing',
     statusTone: 'attention',

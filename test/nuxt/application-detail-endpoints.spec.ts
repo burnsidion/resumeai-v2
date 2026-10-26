@@ -5,6 +5,7 @@ import applicationDetailEndpoint from '../../server/api/applications/[id].get'
 import applicationUpdateEndpoint from '../../server/api/applications/[id].patch'
 import type { ApplicationManagementData } from '../../shared/applications/management'
 import { ApplicationManagementServiceError } from '../../server/services/application-management'
+import { ApplicationTailoringStatusServiceError } from '../../server/services/application-tailoring-status'
 import type { ServerSupabaseClient } from '../../server/utils/authentication/supabase'
 
 const mocks = vi.hoisted(() => {
@@ -29,6 +30,7 @@ const mocks = vi.hoisted(() => {
     createAuthenticationServerClient: vi.fn(),
     loadApplication: vi.fn(),
     markAuthenticationResponsePrivate: vi.fn(),
+    loadApplicationTailoringStatus: vi.fn(),
     readBody,
     resolveAuthenticatedUser: vi.fn(),
     updateApplication: vi.fn(),
@@ -56,6 +58,21 @@ vi.mock(
       ...original,
       loadApplication: mocks.loadApplication,
       updateApplication: mocks.updateApplication,
+    }
+  },
+)
+
+vi.mock(
+  '../../server/services/application-tailoring-status',
+  async (importOriginal) => {
+    const original =
+      await importOriginal<
+        typeof import('../../server/services/application-tailoring-status')
+      >()
+
+    return {
+      ...original,
+      loadApplicationTailoringStatus: mocks.loadApplicationTailoringStatus,
     }
   },
 )
@@ -137,6 +154,7 @@ beforeEach(() => {
     },
   })
   mocks.loadApplication.mockResolvedValue(application)
+  mocks.loadApplicationTailoringStatus.mockResolvedValue({ state: 'ready' })
   mocks.updateApplication.mockResolvedValue(application)
   mocks.readBody.mockResolvedValue({
     expectedUpdatedAt: application.updatedAt,
@@ -170,6 +188,7 @@ describe('application detail endpoints', () => {
         id: applicationId,
         readiness: { isReady: true },
         selectedBaseResume: { id: baseResumeId },
+        tailoring: { state: 'ready' },
       },
     })
 
@@ -181,6 +200,10 @@ describe('application detail endpoints', () => {
     expect(mocks.loadApplication).toHaveBeenCalledWith(
       { client, userId },
       applicationId,
+    )
+    expect(mocks.loadApplicationTailoringStatus).toHaveBeenCalledWith(
+      { client, userId },
+      application,
     )
     expect(mocks.readBody).not.toHaveBeenCalled()
   })
@@ -212,6 +235,21 @@ describe('application detail endpoints', () => {
         jobDescription: null,
         selectedBaseResumeId: null,
         status: 'applied',
+      },
+    )
+  })
+
+  it('reports a safe temporary failure when tailoring status cannot be loaded', async () => {
+    mocks.loadApplicationTailoringStatus.mockRejectedValue(
+      new ApplicationTailoringStatusServiceError(new Error(providerMessage)),
+    )
+
+    await expectEndpointFailure(
+      () => applicationDetailEndpoint(createEvent('GET')),
+      {
+        code: 'applications-unavailable',
+        statusCode: 503,
+        statusMessage: 'Applications are temporarily unavailable.',
       },
     )
   })

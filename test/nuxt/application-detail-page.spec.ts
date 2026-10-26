@@ -61,6 +61,7 @@ const application: ApplicationDetailViewModel = {
     id: resumeId,
     isAvailable: true,
   },
+  tailoring: { state: 'ready' },
   status: 'draft',
   statusLabel: 'Draft',
   statusTone: 'neutral',

@@ -5,6 +5,10 @@ import {
   type TailoringWorkingCopyProposal,
   type TailoringWorkingCopyProvenance,
 } from '../domain/tailoring/working-copy'
+import {
+  tailoringWorkingCopySummarySchema,
+  type TailoringWorkingCopySummary,
+} from '../../shared/tailoring/status'
 import type { Database } from '../infrastructure/supabase/database.generated'
 import type { ProductDataRepositoryContext } from './product-data/context'
 
@@ -57,6 +61,9 @@ export class TailoringWorkingCopiesRepositoryError extends Error {
 }
 
 export interface TailoringWorkingCopiesRepository {
+  findCurrent(
+    applicationId: string,
+  ): Promise<TailoringWorkingCopySummary | null>
   replaceCurrent(
     record: ReplaceCurrentWorkingCopyRecord,
   ): Promise<PersistedCurrentWorkingCopy>
@@ -69,23 +76,57 @@ const createRepositoryError = (
 ): TailoringWorkingCopiesRepositoryError =>
   new TailoringWorkingCopiesRepositoryError(operation, kind, cause)
 
-const parseCurrentWorkingCopy = (
+const parseCurrentWorkingCopySummary = (
   data: unknown,
-): PersistedCurrentWorkingCopy => {
+): TailoringWorkingCopySummary => {
   const row = currentWorkingCopyRowSchema.parse(data)
 
-  return {
+  return tailoringWorkingCopySummarySchema.parse({
     id: row.id,
     revisionNumber: row.revision_number,
+    state: row.state,
     updatedAt: row.updated_at,
-  }
+  })
 }
+
+const toPersistedCurrentWorkingCopy = (
+  summary: TailoringWorkingCopySummary,
+): PersistedCurrentWorkingCopy => ({
+  id: summary.id,
+  revisionNumber: summary.revisionNumber,
+  updatedAt: summary.updatedAt,
+})
 
 export function createTailoringWorkingCopiesRepository({
   client,
   userId,
 }: ProductDataRepositoryContext): TailoringWorkingCopiesRepository {
   return {
+    async findCurrent(applicationId) {
+      try {
+        const { data, error } = await client
+          .from('working_copies')
+          .select(currentWorkingCopyProjection)
+          .eq('user_id', userId)
+          .eq('application_id', applicationId)
+          .maybeSingle()
+
+        if (error) {
+          throw error
+        }
+
+        return data === null ? null : parseCurrentWorkingCopySummary(data)
+      } catch (error) {
+        throw createRepositoryError(
+          'find-current-working-copy',
+          error instanceof z.ZodError
+            ? 'unexpected-result'
+            : 'provider-failure',
+          error,
+        )
+      }
+    },
+
     async replaceCurrent(record) {
       let current: z.infer<typeof currentWorkingCopyRowSchema> | null
 
@@ -153,7 +194,9 @@ export function createTailoringWorkingCopiesRepository({
             throw error
           }
 
-          return parseCurrentWorkingCopy(data)
+          return toPersistedCurrentWorkingCopy(
+            parseCurrentWorkingCopySummary(data),
+          )
         }
 
         const update = {
@@ -180,7 +223,9 @@ export function createTailoringWorkingCopiesRepository({
           )
         }
 
-        return parseCurrentWorkingCopy(data)
+        return toPersistedCurrentWorkingCopy(
+          parseCurrentWorkingCopySummary(data),
+        )
       } catch (error) {
         if (error instanceof TailoringWorkingCopiesRepositoryError) {
           throw error

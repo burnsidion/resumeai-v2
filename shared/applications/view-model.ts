@@ -11,6 +11,10 @@ import {
   applicationStatusSchema,
 } from './constraints'
 import { applicationReadinessRequirementSchema } from './management'
+import {
+  applicationTailoringStateSchema,
+  type ApplicationTailoringState,
+} from '../tailoring/status'
 
 const timestampSchema = z.iso.datetime({ offset: true })
 const dateLabelSchema = z.string().trim().min(1)
@@ -114,6 +118,7 @@ export const applicationDetailViewModelSchema = z
     readiness: applicationReadinessViewModelSchema,
     role: applicationRoleSchema,
     selectedBaseResume: applicationSelectedBaseResumeViewModelSchema.nullable(),
+    tailoring: applicationTailoringStateSchema,
     ...applicationStatusViewModelShape,
     updatedAt: timestampSchema,
     updatedLabel: dateLabelSchema,
@@ -142,3 +147,4 @@ export type ApplicationReadinessViewModel = z.infer<
   typeof applicationReadinessViewModelSchema
 >
 export type ApplicationStatusTone = z.infer<typeof applicationStatusToneSchema>
+export type { ApplicationTailoringState }
