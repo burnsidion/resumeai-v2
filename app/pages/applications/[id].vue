@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import ApplicationDeletionDialog from '~/components/applications/ApplicationDeletionDialog.vue'
 import ApplicationEditingForm from '~/components/applications/ApplicationEditingForm.vue'
+import ApplicationTailoringPanel from '~/components/applications/ApplicationTailoringPanel.vue'
 import type { ApplicationDeletionRecovery } from '~/composables/useApplicationDeletion'
 import type { ApplicationEditingRecovery } from '~/composables/useApplicationEditing'
+import type { ApplicationTailoringRecovery } from '~/composables/useApplicationTailoring'
 import type { UpdateApplicationRequest } from '~~/shared/applications/management'
 import {
   applicationDetailResponseSchema,
@@ -37,6 +39,7 @@ const {
   status: baseResumesRequestStatus,
 } = useBaseResumes()
 const editing = useApplicationEditing()
+const tailoring = useApplicationTailoring()
 
 const isDirty = ref(false)
 const navigationApproved = ref(false)
@@ -158,7 +161,7 @@ const refreshBaseResumes = async (): Promise<void> => {
 }
 
 const openDeletionDialog = (): void => {
-  if (!editing.isBusy.value) {
+  if (!editing.isBusy.value && !tailoring.isBusy.value) {
     deletionDialogOpen.value = true
   }
 }
@@ -228,6 +231,76 @@ const handleEditingRecovery = async (
       return
     case 'review-details':
       editing.reset()
+      return
+    case 'sign-in':
+      await navigateAway('/sign-in', { replace: true })
+  }
+}
+
+const focusTailoringDetails = async (): Promise<void> => {
+  const currentApplication = application.value
+
+  if (!currentApplication) {
+    return
+  }
+
+  editing.reset()
+  await nextTick()
+
+  const missingJobDescription =
+    currentApplication.readiness.missingRequirements.some(
+      (requirement) => requirement.id === 'job-description',
+    )
+
+  if (missingJobDescription) {
+    document.getElementById('application-job-description')?.focus()
+    return
+  }
+
+  document
+    .querySelector<HTMLInputElement>(
+      'input[name="application-base-resume"]:not([disabled])',
+    )
+    ?.focus()
+}
+
+const refreshTailoringStatus = async (): Promise<void> => {
+  await refreshApplicationRequest()
+
+  if (application.value?.tailoring.state === 'working-copy-ready') {
+    tailoring.reset()
+    clearNuxtData('applications-list')
+    clearNuxtData('dashboard')
+  }
+}
+
+const startTailoring = async (): Promise<void> => {
+  const response = await tailoring.start(applicationId)
+
+  if (!response) {
+    return
+  }
+
+  savedAnnouncement.value = 'Your working copy was created.'
+  await refreshTailoringStatus()
+}
+
+const handleTailoringRecovery = async (
+  recovery: ApplicationTailoringRecovery,
+): Promise<void> => {
+  switch (recovery) {
+    case 'back-to-applications':
+      await navigateAway('/applications')
+      return
+    case 'refresh-application':
+      await refreshTailoringStatus()
+      return
+    case 'retry':
+      await tailoring.retry()
+      await refreshTailoringStatus()
+      return
+    case 'review-details':
+      await focusTailoringDetails()
       return
     case 'sign-in':
       await navigateAway('/sign-in', { replace: true })
@@ -342,6 +415,13 @@ onBeforeUnmount(() =>
         @resume-retry-requested="refreshBaseResumesRequest"
       />
 
+      <ApplicationTailoringPanel
+        :application="application"
+        :request-state="tailoring.state.value"
+        @recovery-requested="handleTailoringRecovery"
+        @start-requested="startTailoring"
+      />
+
       <section
         class="border-danger/25 bg-danger/[0.035] mt-8 rounded-2xl border p-5 sm:p-6"
         aria-labelledby="application-deletion-heading"
@@ -369,7 +449,7 @@ onBeforeUnmount(() =>
           <button
             type="button"
             class="border-danger/30 bg-danger/12 text-danger hover:bg-danger/18 focus-visible:outline-focus min-h-11 shrink-0 rounded-xl border px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-            :disabled="editing.isBusy.value"
+            :disabled="editing.isBusy.value || tailoring.isBusy.value"
             @click="openDeletionDialog"
           >
             Delete application
