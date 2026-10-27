@@ -8,6 +8,7 @@ import {
   ApplicationManagementServiceError,
   createApplication,
 } from '../../services/application-management'
+import { deriveApplicationTailoringStatus } from '../../services/application-tailoring-status'
 import {
   createAuthenticationServerClient,
   markAuthenticationResponsePrivate,
@@ -119,7 +120,10 @@ export default defineEventHandler(
     }
 
     try {
-      const response = createApplicationDetailResponse(application)
+      const response = createApplicationDetailResponse(
+        application,
+        deriveApplicationTailoringStatus(application, null, null),
+      )
 
       event.node.res.statusCode = 201
 

@@ -528,6 +528,40 @@ test('manages only the authenticated owner applications through the Nuxt server'
 
     expect(createdApplicationId).toMatch(/^[0-9a-f-]{36}$/)
 
+    let tailoringRequests = 0
+    await page.route(
+      `**/api/applications/${createdApplicationId}/tailoring`,
+      async (route) => {
+        tailoringRequests += 1
+        await route.fulfill({
+          body: JSON.stringify({
+            workingCopy: {
+              id: 'ba6e5132-6c68-4fa3-90ea-a8ce6d348b8e',
+              revisionNumber: 1,
+              updatedAt: '2026-10-26T00:00:00.000Z',
+            },
+          }),
+          contentType: 'application/json',
+          status: 200,
+        })
+      },
+    )
+
+    await expect(
+      page.getByRole('button', { name: 'Start tailoring' }),
+    ).toBeVisible()
+    expect(tailoringRequests).toBe(0)
+
+    await page.getByRole('button', { name: 'Start tailoring' }).click()
+    await expect(
+      page.getByRole('region', { name: 'Confirm working copy creation' }),
+    ).toBeVisible()
+    expect(tailoringRequests).toBe(0)
+
+    await page.getByRole('button', { name: 'Create working copy' }).click()
+    await expect.poll(() => tailoringRequests).toBe(1)
+    await expect(page.getByText('Your working copy is ready')).toBeVisible()
+
     await page.getByLabel('Company').fill('Aurora Product Works')
     await page.getByLabel('Role').fill('Staff Product Engineer')
     await page.getByLabel('Tracking status').selectOption('interviewing')

@@ -43,6 +43,7 @@ const application: ApplicationDetailViewModel = {
   },
   role: 'Senior Frontend Engineer',
   selectedBaseResume: null,
+  tailoring: { state: 'not-ready' },
   status: 'draft',
   statusLabel: 'Draft',
   statusTone: 'neutral',

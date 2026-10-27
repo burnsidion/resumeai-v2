@@ -3,6 +3,7 @@ import type {
   ApplicationReadiness,
   ApplicationReadinessRequirement,
 } from '../../shared/applications/management'
+import type { ApplicationTailoringState } from '../../shared/tailoring/status'
 import type { ApplicationStatus } from '../../shared/applications/constraints'
 import {
   applicationDetailResponseSchema,
@@ -86,6 +87,7 @@ export function createApplicationListViewModel(
 
 export function createApplicationDetailResponse(
   application: ApplicationManagementData,
+  tailoring: ApplicationTailoringState,
 ): ApplicationDetailResponse {
   const statusPresentation = applicationStatusPresentation[application.status]
 
@@ -111,6 +113,7 @@ export function createApplicationDetailResponse(
             isAvailable: application.selectedBaseResume.isAvailable,
           }
         : null,
+      tailoring,
       status: application.status,
       statusLabel: statusPresentation.label,
       statusTone: statusPresentation.tone,

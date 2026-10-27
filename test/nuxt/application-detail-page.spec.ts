@@ -6,8 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import ApplicationEditingForm from '~/components/applications/ApplicationEditingForm.vue'
 import ApplicationDeletionDialog from '~/components/applications/ApplicationDeletionDialog.vue'
+import ApplicationTailoringPanel from '~/components/applications/ApplicationTailoringPanel.vue'
 import ApplicationDetailPage from '~/pages/applications/[id].vue'
 import type { ApplicationEditingState } from '~/composables/useApplicationEditing'
+import type { ApplicationTailoringRequestState } from '~/composables/useApplicationTailoring'
 import type { UpdateApplicationRequest } from '~~/shared/applications/management'
 import type {
   ApplicationDetailResponse,
@@ -22,9 +24,13 @@ const mocks = vi.hoisted(() => ({
   refreshApplication: vi.fn(),
   refreshBaseResumes: vi.fn(),
   resetEditing: vi.fn(),
+  resetTailoring: vi.fn(),
   retryEditing: vi.fn(),
+  retryTailoring: vi.fn(),
   saveApplication: vi.fn(),
+  startTailoring: vi.fn(),
   useApplicationEditing: vi.fn(),
+  useApplicationTailoring: vi.fn(),
   useBaseResumes: vi.fn(),
   useFetch: vi.fn(),
   useRoute: vi.fn(),
@@ -34,6 +40,7 @@ mockNuxtImport('navigateTo', () => mocks.navigateTo)
 mockNuxtImport('clearNuxtData', () => mocks.clearNuxtData)
 mockNuxtImport('onBeforeRouteLeave', () => mocks.onBeforeRouteLeave)
 mockNuxtImport('useApplicationEditing', () => mocks.useApplicationEditing)
+mockNuxtImport('useApplicationTailoring', () => mocks.useApplicationTailoring)
 mockNuxtImport('useBaseResumes', () => mocks.useBaseResumes)
 mockNuxtImport('useFetch', () => mocks.useFetch)
 mockNuxtImport('useRoute', () => mocks.useRoute)
@@ -61,6 +68,7 @@ const application: ApplicationDetailViewModel = {
     id: resumeId,
     isAvailable: true,
   },
+  tailoring: { state: 'ready' },
   status: 'draft',
   statusLabel: 'Draft',
   statusTone: 'neutral',
@@ -117,6 +125,7 @@ let applicationError: Ref<unknown>
 let applicationRequestStatus: Ref<'error' | 'pending' | 'success'>
 let baseResumeRequestStatus: Ref<'error' | 'pending' | 'success'>
 let editingState: Ref<ApplicationEditingState>
+let tailoringState: Ref<ApplicationTailoringRequestState>
 
 const getButton = (wrapper: VueWrapper, label: string) => {
   const button = wrapper
@@ -138,6 +147,7 @@ describe('application detail page', () => {
     applicationRequestStatus = ref('success')
     baseResumeRequestStatus = ref('success')
     editingState = ref<ApplicationEditingState>({ status: 'idle' })
+    tailoringState = ref<ApplicationTailoringRequestState>({ status: 'idle' })
 
     mocks.navigateTo.mockResolvedValue(undefined)
     mocks.refreshApplication.mockImplementation(async () => {
@@ -148,6 +158,14 @@ describe('application detail page', () => {
     mocks.refreshBaseResumes.mockResolvedValue(undefined)
     mocks.saveApplication.mockResolvedValue(updatedApplication)
     mocks.retryEditing.mockResolvedValue(updatedApplication)
+    mocks.retryTailoring.mockResolvedValue(null)
+    mocks.startTailoring.mockResolvedValue({
+      workingCopy: {
+        id: 'ba6e5132-6c68-4fa3-90ea-a8ce6d348b8e',
+        revisionNumber: 1,
+        updatedAt: '2026-10-26T00:00:00.000Z',
+      },
+    })
     mocks.useRoute.mockReturnValue({ params: { id: applicationId } })
     mocks.useFetch.mockReturnValue({
       data: applicationData,
@@ -167,6 +185,14 @@ describe('application detail page', () => {
       save: mocks.saveApplication,
       state: readonly(editingState),
     })
+    mocks.useApplicationTailoring.mockReturnValue({
+      canRetry: computed(() => false),
+      isBusy: computed(() => tailoringState.value.status === 'generating'),
+      reset: mocks.resetTailoring,
+      retry: mocks.retryTailoring,
+      start: mocks.startTailoring,
+      state: readonly(tailoringState),
+    })
   })
 
   afterEach(() => {
@@ -185,6 +211,7 @@ describe('application detail page', () => {
     )
     expect(mocks.useBaseResumes).toHaveBeenCalledOnce()
     expect(mocks.useApplicationEditing).toHaveBeenCalledOnce()
+    expect(mocks.useApplicationTailoring).toHaveBeenCalledOnce()
     expect(wrapper.get('h1').text()).toBe('Senior Frontend Engineer')
     expect(wrapper.text()).toContain('Northstar Labs')
     expect(wrapper.text()).toContain('Updated Sep 8, 2026')
@@ -192,6 +219,34 @@ describe('application detail page', () => {
     expect(form.props('baseResumes')).toEqual(baseResumes.items)
     expect(form.props('baseResumesStatus')).toBe('success')
     expect(wrapper.text()).not.toContain('Application saved')
+  })
+
+  it('starts tailoring only after the panel requests it, then refreshes trusted application data', async () => {
+    const wrapper = await mountSuspended(ApplicationDetailPage)
+    const panel = wrapper.getComponent(ApplicationTailoringPanel)
+
+    expect(mocks.startTailoring).not.toHaveBeenCalled()
+
+    panel.vm.$emit('start-requested')
+    await flushPromises()
+
+    expect(mocks.startTailoring).toHaveBeenCalledWith(applicationId)
+    expect(mocks.refreshApplication).toHaveBeenCalledOnce()
+    expect(wrapper.get('[role="status"]').text()).toContain(
+      'Your working copy was created.',
+    )
+  })
+
+  it('delegates tailoring recovery without introducing a second data path', async () => {
+    const wrapper = await mountSuspended(ApplicationDetailPage)
+    const panel = wrapper.getComponent(ApplicationTailoringPanel)
+
+    panel.vm.$emit('recovery-requested', 'retry')
+    await flushPromises()
+
+    expect(mocks.retryTailoring).toHaveBeenCalledOnce()
+    expect(mocks.refreshApplication).toHaveBeenCalledOnce()
+    expect(mocks.startTailoring).not.toHaveBeenCalled()
   })
 
   it('replaces the editing snapshot only after a confirmed update', async () => {
