@@ -185,6 +185,12 @@ describe('application tailoring endpoint', () => {
       'The current working copy can no longer be replaced.',
     ],
     [
+      'working-copy-already-exists',
+      'working-copy-already-exists',
+      409,
+      'A working copy is already available for review.',
+    ],
+    [
       'provider-unavailable',
       'tailoring-unavailable',
       503,

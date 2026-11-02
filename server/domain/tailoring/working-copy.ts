@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { MAXIMUM_TAILORING_REVISION_GUIDANCE_LENGTH } from '../../../shared/tailoring/revision'
 import { calculateResumeSourceSha256 } from '../resume-interpretations/interpret'
 import {
   resumeInterpretationStructuredContentSchema,
@@ -38,6 +39,12 @@ export const tailoringWorkingCopyRequestSchema = z
   .object({
     analysis: tailoringAnalysisSchema,
     jobDescription: z.string().trim().min(1),
+    revisionGuidance: z
+      .string()
+      .trim()
+      .min(1)
+      .max(MAXIMUM_TAILORING_REVISION_GUIDANCE_LENGTH)
+      .optional(),
     sourceResume: resumeInterpretationStructuredContentSchema,
   })
   .strict()

@@ -8,6 +8,7 @@ import {
   validateTailoringWorkingCopy,
 } from '../../server/domain/tailoring/working-copy'
 import { resumeInterpretationStructuredContentSchema } from '../../server/domain/resume-interpretations/contracts'
+import { MAXIMUM_TAILORING_REVISION_GUIDANCE_LENGTH } from '../../shared/tailoring/revision'
 import { syntheticTailoringFixture } from '../fixtures/tailoring'
 
 const providerMessage = 'Sensitive provider implementation details'
@@ -149,5 +150,29 @@ describe('tailoring working-copy contracts', () => {
     expect(providerInput.sourceResume.sourceBlocks).not.toContainEqual(
       expect.objectContaining({ type: 'contact' }),
     )
+  })
+
+  it('allows bounded revision guidance without changing the source-backed working-copy contract', () => {
+    expect(
+      createTailoringWorkingCopyRequest({
+        analysis: { ...syntheticTailoringFixture.analysis, strengths: [] },
+        jobDescription: syntheticTailoringFixture.jobDescription.text,
+        revisionGuidance: 'Make the experience bullets more concise.',
+        sourceResume,
+      }),
+    ).toMatchObject({
+      revisionGuidance: 'Make the experience bullets more concise.',
+    })
+
+    expect(() =>
+      createTailoringWorkingCopyRequest({
+        analysis: { ...syntheticTailoringFixture.analysis, strengths: [] },
+        jobDescription: syntheticTailoringFixture.jobDescription.text,
+        revisionGuidance: 'a'.repeat(
+          MAXIMUM_TAILORING_REVISION_GUIDANCE_LENGTH + 1,
+        ),
+        sourceResume,
+      }),
+    ).toThrowError(TailoringWorkingCopyValidationError)
   })
 })

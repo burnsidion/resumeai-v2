@@ -107,7 +107,10 @@ const createDependencies = (
     acquire: ReturnType<typeof vi.fn>
     release: ReturnType<typeof vi.fn>
   }
-  workingCopies: { replaceCurrent: ReturnType<typeof vi.fn> }
+  workingCopies: {
+    findCurrent: ReturnType<typeof vi.fn>
+    replaceCurrent: ReturnType<typeof vi.fn>
+  }
   workingCopyProvider: TailoringWorkingCopyProvider
 } => {
   const applicationRepository = {
@@ -130,7 +133,10 @@ const createDependencies = (
     },
     propose: vi.fn(async () => proposal),
   } satisfies TailoringWorkingCopyProvider
-  const workingCopies = { replaceCurrent: vi.fn(async () => persisted) }
+  const workingCopies = {
+    findCurrent: vi.fn(async () => null),
+    replaceCurrent: vi.fn(async () => persisted),
+  }
   const dependencies = {
     calculateWorkingCopySha256: calculateTailoringWorkingCopySha256,
     createAnalysisProvider: vi.fn(() => analysisProvider),
@@ -235,6 +241,92 @@ describe('application working-copy generation service', () => {
     expect(workingCopyProvider.propose).not.toHaveBeenCalled()
     expect(workingCopies.replaceCurrent).not.toHaveBeenCalled()
     expect(operations.release).not.toHaveBeenCalled()
+  })
+
+  it('does not replace an existing proposal through the initial-generation path', async () => {
+    const {
+      analysisProvider,
+      dependencies,
+      workingCopies,
+      workingCopyProvider,
+    } = createDependencies({
+      createWorkingCopiesRepository: () =>
+        ({
+          findCurrent: async () => ({
+            id: workingCopyId,
+            revisionNumber: 1,
+            state: 'awaiting_review',
+            updatedAt: '2026-10-11T00:00:00.000Z',
+          }),
+          replaceCurrent: workingCopies.replaceCurrent,
+        }) as unknown as TailoringWorkingCopiesRepository,
+    })
+
+    await expectServiceError(
+      () =>
+        generateApplicationWorkingCopy(context, applicationId, dependencies),
+      'working-copy-already-exists',
+    )
+
+    expect(analysisProvider.analyze).not.toHaveBeenCalled()
+    expect(workingCopyProvider.propose).not.toHaveBeenCalled()
+  })
+
+  it('replaces only an awaiting-review proposal and passes bounded revision guidance to the provider', async () => {
+    const { dependencies, workingCopies, workingCopyProvider } =
+      createDependencies({
+        createWorkingCopiesRepository: () =>
+          ({
+            findCurrent: async () => ({
+              id: workingCopyId,
+              revisionNumber: 1,
+              state: 'awaiting_review',
+              updatedAt: '2026-10-11T00:00:00.000Z',
+            }),
+            replaceCurrent: workingCopies.replaceCurrent,
+          }) as unknown as TailoringWorkingCopiesRepository,
+      })
+
+    await expect(
+      generateApplicationWorkingCopy(context, applicationId, dependencies, {
+        mode: 'revision',
+        revisionGuidance: 'Emphasize accessible interface work.',
+      }),
+    ).resolves.toEqual(persisted)
+
+    expect(workingCopyProvider.propose).toHaveBeenCalledWith(
+      expect.objectContaining({
+        revisionGuidance: 'Emphasize accessible interface work.',
+      }),
+    )
+    expect(workingCopies.replaceCurrent).toHaveBeenCalledOnce()
+  })
+
+  it('does not run a revision after the current proposal has been accepted', async () => {
+    const { analysisProvider, dependencies, workingCopyProvider } =
+      createDependencies({
+        createWorkingCopiesRepository: () =>
+          ({
+            findCurrent: async () => ({
+              id: workingCopyId,
+              revisionNumber: 1,
+              state: 'accepted',
+              updatedAt: '2026-10-11T00:00:00.000Z',
+            }),
+            replaceCurrent: async () => persisted,
+          }) as unknown as TailoringWorkingCopiesRepository,
+      })
+
+    await expectServiceError(
+      () =>
+        generateApplicationWorkingCopy(context, applicationId, dependencies, {
+          mode: 'revision',
+        }),
+      'working-copy-immutable',
+    )
+
+    expect(analysisProvider.analyze).not.toHaveBeenCalled()
+    expect(workingCopyProvider.propose).not.toHaveBeenCalled()
   })
 
   it('rejects unsupported rewrite output without replacing the current copy and releases its lease', async () => {
