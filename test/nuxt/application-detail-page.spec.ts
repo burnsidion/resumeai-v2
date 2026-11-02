@@ -7,9 +7,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ApplicationEditingForm from '~/components/applications/ApplicationEditingForm.vue'
 import ApplicationDeletionDialog from '~/components/applications/ApplicationDeletionDialog.vue'
 import ApplicationTailoringPanel from '~/components/applications/ApplicationTailoringPanel.vue'
+import ApplicationWorkingCopyReview from '~/components/applications/ApplicationWorkingCopyReview.vue'
 import ApplicationDetailPage from '~/pages/applications/[id].vue'
 import type { ApplicationEditingState } from '~/composables/useApplicationEditing'
 import type { ApplicationTailoringRequestState } from '~/composables/useApplicationTailoring'
+import type { ApplicationWorkingCopyActionState } from '~/composables/useApplicationWorkingCopyActions'
+import type { ApplicationWorkingCopyReviewState } from '~/composables/useApplicationWorkingCopyReview'
 import type { UpdateApplicationRequest } from '~~/shared/applications/management'
 import type {
   ApplicationDetailResponse,
@@ -19,18 +22,28 @@ import type { BaseResumesManagementViewModel } from '~~/shared/base-resumes/view
 
 const mocks = vi.hoisted(() => ({
   clearNuxtData: vi.fn(),
+  acceptWorkingCopy: vi.fn(),
+  discardWorkingCopy: vi.fn(),
+  loadWorkingCopyReview: vi.fn(),
   navigateTo: vi.fn(),
   onBeforeRouteLeave: vi.fn(),
   refreshApplication: vi.fn(),
   refreshBaseResumes: vi.fn(),
   resetEditing: vi.fn(),
   resetTailoring: vi.fn(),
+  resetWorkingCopyActions: vi.fn(),
+  resetWorkingCopyReview: vi.fn(),
+  retryWorkingCopyAction: vi.fn(),
+  retryWorkingCopyReview: vi.fn(),
   retryEditing: vi.fn(),
   retryTailoring: vi.fn(),
   saveApplication: vi.fn(),
   startTailoring: vi.fn(),
+  reviseWorkingCopy: vi.fn(),
   useApplicationEditing: vi.fn(),
   useApplicationTailoring: vi.fn(),
+  useApplicationWorkingCopyActions: vi.fn(),
+  useApplicationWorkingCopyReview: vi.fn(),
   useBaseResumes: vi.fn(),
   useFetch: vi.fn(),
   useRoute: vi.fn(),
@@ -41,6 +54,14 @@ mockNuxtImport('clearNuxtData', () => mocks.clearNuxtData)
 mockNuxtImport('onBeforeRouteLeave', () => mocks.onBeforeRouteLeave)
 mockNuxtImport('useApplicationEditing', () => mocks.useApplicationEditing)
 mockNuxtImport('useApplicationTailoring', () => mocks.useApplicationTailoring)
+mockNuxtImport(
+  'useApplicationWorkingCopyActions',
+  () => mocks.useApplicationWorkingCopyActions,
+)
+mockNuxtImport(
+  'useApplicationWorkingCopyReview',
+  () => mocks.useApplicationWorkingCopyReview,
+)
 mockNuxtImport('useBaseResumes', () => mocks.useBaseResumes)
 mockNuxtImport('useFetch', () => mocks.useFetch)
 mockNuxtImport('useRoute', () => mocks.useRoute)
@@ -86,6 +107,37 @@ const updatedApplication: ApplicationDetailViewModel = {
   updatedLabel: 'Sep 13, 2026',
 }
 const response: ApplicationDetailResponse = { application }
+const workingCopyReview = {
+  changes: [],
+  proposal: {
+    sections: [
+      { heading: 'Experience', items: ['Built accessible interfaces.'] },
+    ],
+  },
+  source: {
+    baseResumeId: resumeId,
+    filename: 'Frontend Engineering.pdf',
+    sections: [{ heading: 'Experience', items: ['Built Vue interfaces.'] }],
+  },
+  workingCopy: {
+    id: 'ba6e5132-6c68-4fa3-90ea-a8ce6d348b8e',
+    revisionNumber: 1,
+    state: 'awaiting_review' as const,
+    updatedAt: '2026-11-01T00:00:00.000Z',
+  },
+}
+const applicationWithWorkingCopy: ApplicationDetailViewModel = {
+  ...application,
+  tailoring: {
+    state: 'working-copy-ready',
+    workingCopy: {
+      id: workingCopyReview.workingCopy.id,
+      revisionNumber: workingCopyReview.workingCopy.revisionNumber,
+      state: 'awaiting_review',
+      updatedAt: workingCopyReview.workingCopy.updatedAt,
+    },
+  },
+}
 const baseResumes: BaseResumesManagementViewModel = {
   activeCount: 1,
   activeCountLabel: '1 active resume',
@@ -126,6 +178,8 @@ let applicationRequestStatus: Ref<'error' | 'pending' | 'success'>
 let baseResumeRequestStatus: Ref<'error' | 'pending' | 'success'>
 let editingState: Ref<ApplicationEditingState>
 let tailoringState: Ref<ApplicationTailoringRequestState>
+let workingCopyActionState: Ref<ApplicationWorkingCopyActionState>
+let workingCopyReviewState: Ref<ApplicationWorkingCopyReviewState>
 
 const getButton = (wrapper: VueWrapper, label: string) => {
   const button = wrapper
@@ -148,6 +202,12 @@ describe('application detail page', () => {
     baseResumeRequestStatus = ref('success')
     editingState = ref<ApplicationEditingState>({ status: 'idle' })
     tailoringState = ref<ApplicationTailoringRequestState>({ status: 'idle' })
+    workingCopyActionState = ref<ApplicationWorkingCopyActionState>({
+      status: 'idle',
+    })
+    workingCopyReviewState = ref<ApplicationWorkingCopyReviewState>({
+      status: 'idle',
+    })
 
     mocks.navigateTo.mockResolvedValue(undefined)
     mocks.refreshApplication.mockImplementation(async () => {
@@ -166,6 +226,11 @@ describe('application detail page', () => {
         updatedAt: '2026-10-26T00:00:00.000Z',
       },
     })
+    mocks.acceptWorkingCopy.mockResolvedValue(true)
+    mocks.discardWorkingCopy.mockResolvedValue(true)
+    mocks.reviseWorkingCopy.mockResolvedValue(true)
+    mocks.retryWorkingCopyAction.mockResolvedValue(false)
+    mocks.retryWorkingCopyReview.mockResolvedValue(null)
     mocks.useRoute.mockReturnValue({ params: { id: applicationId } })
     mocks.useFetch.mockReturnValue({
       data: applicationData,
@@ -192,6 +257,24 @@ describe('application detail page', () => {
       retry: mocks.retryTailoring,
       start: mocks.startTailoring,
       state: readonly(tailoringState),
+    })
+    mocks.useApplicationWorkingCopyActions.mockReturnValue({
+      accept: mocks.acceptWorkingCopy,
+      canRetry: computed(() => false),
+      discard: mocks.discardWorkingCopy,
+      isBusy: computed(() => false),
+      reset: mocks.resetWorkingCopyActions,
+      retry: mocks.retryWorkingCopyAction,
+      revise: mocks.reviseWorkingCopy,
+      state: readonly(workingCopyActionState),
+    })
+    mocks.useApplicationWorkingCopyReview.mockReturnValue({
+      canRetry: computed(() => false),
+      isLoading: computed(() => false),
+      load: mocks.loadWorkingCopyReview,
+      reset: mocks.resetWorkingCopyReview,
+      retry: mocks.retryWorkingCopyReview,
+      state: readonly(workingCopyReviewState),
     })
   })
 
@@ -247,6 +330,46 @@ describe('application detail page', () => {
     expect(mocks.retryTailoring).toHaveBeenCalledOnce()
     expect(mocks.refreshApplication).toHaveBeenCalledOnce()
     expect(mocks.startTailoring).not.toHaveBeenCalled()
+  })
+
+  it('refreshes trusted application and review data only after a confirmed whole-copy acceptance', async () => {
+    applicationData.value = { application: applicationWithWorkingCopy }
+    mocks.refreshApplication.mockImplementation(async () => {
+      applicationData.value = {
+        application: {
+          ...applicationWithWorkingCopy,
+          tailoring: {
+            state: 'working-copy-accepted',
+            workingCopy: {
+              id: workingCopyReview.workingCopy.id,
+              revisionNumber: workingCopyReview.workingCopy.revisionNumber,
+              state: 'accepted',
+              updatedAt: workingCopyReview.workingCopy.updatedAt,
+            },
+          },
+        },
+      }
+    })
+    workingCopyReviewState.value = {
+      review: workingCopyReview,
+      status: 'ready',
+    }
+    const wrapper = await mountSuspended(ApplicationDetailPage)
+    const review = wrapper.getComponent(ApplicationWorkingCopyReview)
+
+    review.vm.$emit('accept-requested')
+    await flushPromises()
+
+    expect(mocks.acceptWorkingCopy).toHaveBeenCalledWith(
+      applicationId,
+      workingCopyReview.workingCopy.id,
+      1,
+    )
+    expect(mocks.refreshApplication).toHaveBeenCalledOnce()
+    expect(mocks.loadWorkingCopyReview).toHaveBeenCalledWith(applicationId)
+    expect(wrapper.get('[role="status"]').text()).toContain(
+      'Your working copy was accepted.',
+    )
   })
 
   it('replaces the editing snapshot only after a confirmed update', async () => {

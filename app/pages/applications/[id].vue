@@ -2,9 +2,14 @@
 import ApplicationDeletionDialog from '~/components/applications/ApplicationDeletionDialog.vue'
 import ApplicationEditingForm from '~/components/applications/ApplicationEditingForm.vue'
 import ApplicationTailoringPanel from '~/components/applications/ApplicationTailoringPanel.vue'
+import ApplicationWorkingCopyReview from '~/components/applications/ApplicationWorkingCopyReview.vue'
+import ApplicationWorkingCopySourcePreviewDialog from '~/components/applications/ApplicationWorkingCopySourcePreviewDialog.vue'
 import type { ApplicationDeletionRecovery } from '~/composables/useApplicationDeletion'
 import type { ApplicationEditingRecovery } from '~/composables/useApplicationEditing'
 import type { ApplicationTailoringRecovery } from '~/composables/useApplicationTailoring'
+import type { ApplicationWorkingCopyActionRecovery } from '~/composables/useApplicationWorkingCopyActions'
+import type { ApplicationWorkingCopyReviewRecovery } from '~/composables/useApplicationWorkingCopyReview'
+import type { ApplicationWorkingCopySourcePreviewRecovery } from '~/composables/useApplicationWorkingCopySourcePreview'
 import type { UpdateApplicationRequest } from '~~/shared/applications/management'
 import {
   applicationDetailResponseSchema,
@@ -40,11 +45,14 @@ const {
 } = useBaseResumes()
 const editing = useApplicationEditing()
 const tailoring = useApplicationTailoring()
+const workingCopyActions = useApplicationWorkingCopyActions()
+const workingCopyReview = useApplicationWorkingCopyReview()
 
 const isDirty = ref(false)
 const navigationApproved = ref(false)
 const savedAnnouncement = ref('')
 const deletionDialogOpen = ref(false)
+const sourcePreviewOpen = ref(false)
 
 const application = computed(() => data.value?.application ?? null)
 const baseResumeItems = computed(() => baseResumes.value?.items ?? [])
@@ -78,6 +86,16 @@ const applicationUnavailable = computed(
   () =>
     applicationErrorStatus.value === 400 ||
     applicationErrorStatus.value === 404,
+)
+const applicationHasWorkingCopy = computed(() => {
+  const state = application.value?.tailoring.state
+
+  return state === 'working-copy-ready' || state === 'working-copy-accepted'
+})
+const currentWorkingCopyReview = computed(() =>
+  workingCopyReview.state.value.status === 'ready'
+    ? workingCopyReview.state.value.review
+    : null,
 )
 const authenticationRequired = computed(
   () => applicationErrorStatus.value === 401,
@@ -267,11 +285,26 @@ const focusTailoringDetails = async (): Promise<void> => {
 const refreshTailoringStatus = async (): Promise<void> => {
   await refreshApplicationRequest()
 
-  if (application.value?.tailoring.state === 'working-copy-ready') {
+  if (
+    application.value?.tailoring.state === 'working-copy-ready' ||
+    application.value?.tailoring.state === 'working-copy-accepted'
+  ) {
     tailoring.reset()
     clearNuxtData('applications-list')
     clearNuxtData('dashboard')
   }
+
+  await refreshWorkingCopyReview()
+}
+
+const refreshWorkingCopyReview = async (): Promise<void> => {
+  if (!applicationHasWorkingCopy.value) {
+    sourcePreviewOpen.value = false
+    workingCopyReview.reset()
+    return
+  }
+
+  await workingCopyReview.load(applicationId)
 }
 
 const startTailoring = async (): Promise<void> => {
@@ -283,6 +316,74 @@ const startTailoring = async (): Promise<void> => {
 
   savedAnnouncement.value = 'Your working copy was created.'
   await refreshTailoringStatus()
+}
+
+const handleConfirmedWorkingCopyAction = async (
+  message: string,
+): Promise<void> => {
+  savedAnnouncement.value = message
+  await refreshTailoringStatus()
+}
+
+const acceptWorkingCopy = async (): Promise<void> => {
+  const review = currentWorkingCopyReview.value
+
+  if (!review) {
+    return
+  }
+
+  const accepted = await workingCopyActions.accept(
+    applicationId,
+    review.workingCopy.id,
+    review.workingCopy.revisionNumber,
+  )
+
+  if (accepted) {
+    await handleConfirmedWorkingCopyAction(
+      'Your working copy was accepted. Your original PDF remains unchanged.',
+    )
+  }
+}
+
+const discardWorkingCopy = async (): Promise<void> => {
+  const review = currentWorkingCopyReview.value
+
+  if (!review) {
+    return
+  }
+
+  const discarded = await workingCopyActions.discard(
+    applicationId,
+    review.workingCopy.id,
+    review.workingCopy.revisionNumber,
+  )
+
+  if (discarded) {
+    await handleConfirmedWorkingCopyAction(
+      'The working copy was discarded. Your original PDF remains unchanged.',
+    )
+  }
+}
+
+const reviseWorkingCopy = async (guidance: string): Promise<void> => {
+  const review = currentWorkingCopyReview.value
+
+  if (!review) {
+    return
+  }
+
+  const revised = await workingCopyActions.revise(
+    applicationId,
+    review.workingCopy.id,
+    review.workingCopy.revisionNumber,
+    { guidance },
+  )
+
+  if (revised) {
+    await handleConfirmedWorkingCopyAction(
+      'A revised working copy is ready for review.',
+    )
+  }
 }
 
 const handleTailoringRecovery = async (
@@ -305,6 +406,75 @@ const handleTailoringRecovery = async (
     case 'sign-in':
       await navigateAway('/sign-in', { replace: true })
   }
+}
+
+const handleWorkingCopyReviewRecovery = async (
+  recovery: ApplicationWorkingCopyReviewRecovery,
+): Promise<void> => {
+  switch (recovery) {
+    case 'back-to-applications':
+      await navigateAway('/applications')
+      return
+    case 'refresh-application':
+      await reloadApplication()
+      await refreshWorkingCopyReview()
+      return
+    case 'retry':
+      await workingCopyReview.retry()
+      return
+    case 'sign-in':
+      await navigateAway('/sign-in', { replace: true })
+  }
+}
+
+const handleWorkingCopyActionRecovery = async (
+  recovery: ApplicationWorkingCopyActionRecovery,
+): Promise<void> => {
+  switch (recovery) {
+    case 'back-to-applications':
+      await navigateAway('/applications')
+      return
+    case 'refresh-application':
+      await reloadApplication()
+      await refreshWorkingCopyReview()
+      return
+    case 'sign-in':
+      await navigateAway('/sign-in', { replace: true })
+      return
+    case 'retry':
+      await retryWorkingCopyAction()
+  }
+}
+
+const retryWorkingCopyAction = async (): Promise<void> => {
+  const completed = await workingCopyActions.retry()
+
+  if (completed) {
+    await handleConfirmedWorkingCopyAction('Your working copy was updated.')
+  }
+}
+
+const handleSourcePreviewRecovery = async (
+  recovery: Exclude<ApplicationWorkingCopySourcePreviewRecovery, 'retry'>,
+): Promise<void> => {
+  sourcePreviewOpen.value = false
+
+  if (recovery === 'sign-in') {
+    await navigateAway('/sign-in', { replace: true })
+    return
+  }
+
+  if (recovery === 'back-to-applications') {
+    await navigateAway('/applications')
+    return
+  }
+
+  await reloadApplication()
+  await refreshWorkingCopyReview()
+}
+
+const focusWorkingCopyReview = (): void => {
+  document.getElementById('working-copy-review-heading')?.focus()
 }
 
 const handleDirtyChanged = (dirty: boolean): void => {
@@ -333,9 +503,20 @@ onBeforeRouteLeave(() => {
 })
 
 onMounted(() => window.addEventListener('beforeunload', handleBeforeUnload))
+onMounted(() => {
+  void refreshWorkingCopyReview()
+})
 onBeforeUnmount(() =>
   window.removeEventListener('beforeunload', handleBeforeUnload),
 )
+
+watch(applicationHasWorkingCopy, (hasWorkingCopy, previouslyHadWorkingCopy) => {
+  if (!import.meta.client || hasWorkingCopy === previouslyHadWorkingCopy) {
+    return
+  }
+
+  void refreshWorkingCopyReview()
+})
 </script>
 
 <template>
@@ -415,7 +596,93 @@ onBeforeUnmount(() =>
         @resume-retry-requested="refreshBaseResumesRequest"
       />
 
+      <ApplicationWorkingCopyReview
+        v-if="currentWorkingCopyReview"
+        :action-state="workingCopyActions.state.value"
+        :review="currentWorkingCopyReview"
+        @accept-requested="acceptWorkingCopy"
+        @action-recovery-requested="handleWorkingCopyActionRecovery"
+        @action-retry-requested="retryWorkingCopyAction"
+        @discard-requested="discardWorkingCopy"
+        @revision-requested="reviseWorkingCopy"
+        @source-preview-requested="sourcePreviewOpen = true"
+      />
+
+      <section
+        v-else-if="
+          applicationHasWorkingCopy && workingCopyReview.isLoading.value
+        "
+        class="border-line bg-surface mt-8 rounded-2xl border p-5 sm:p-6"
+        aria-busy="true"
+        aria-live="polite"
+        aria-labelledby="working-copy-review-heading"
+      >
+        <p
+          class="text-accent text-xs font-semibold tracking-[0.14em] uppercase"
+        >
+          Working copy ready
+        </p>
+        <h2
+          id="working-copy-review-heading"
+          tabindex="-1"
+          class="mt-2 text-lg font-semibold tracking-[-0.02em] outline-none"
+        >
+          Loading your review workspace
+        </h2>
+        <p class="text-muted mt-2 text-sm leading-6">
+          Preparing your source, working copy, and material changes for review.
+        </p>
+      </section>
+
+      <section
+        v-else-if="
+          applicationHasWorkingCopy &&
+          workingCopyReview.state.value.status === 'failure'
+        "
+        class="border-danger/25 bg-danger/[0.035] mt-8 rounded-2xl border p-5 sm:p-6"
+        role="alert"
+        aria-labelledby="working-copy-review-heading"
+      >
+        <p
+          class="text-danger text-xs font-semibold tracking-[0.14em] uppercase"
+        >
+          Review needs attention
+        </p>
+        <h2
+          id="working-copy-review-heading"
+          tabindex="-1"
+          class="mt-2 text-lg font-semibold tracking-[-0.02em] outline-none"
+        >
+          We couldn’t load this working copy
+        </h2>
+        <p class="text-muted mt-2 max-w-2xl text-sm leading-6">
+          {{ workingCopyReview.state.value.failure.message }}
+        </p>
+        <button
+          type="button"
+          class="border-line bg-panel hover:bg-raised focus-visible:outline-focus mt-5 min-h-11 rounded-xl border px-5 text-sm font-semibold transition-colors"
+          @click="
+            handleWorkingCopyReviewRecovery(
+              workingCopyReview.state.value.failure.recovery,
+            )
+          "
+        >
+          {{
+            workingCopyReview.state.value.failure.recovery ===
+            'back-to-applications'
+              ? 'Back to applications'
+              : workingCopyReview.state.value.failure.recovery ===
+                  'refresh-application'
+                ? 'Refresh application'
+                : workingCopyReview.state.value.failure.recovery === 'sign-in'
+                  ? 'Return to sign in'
+                  : 'Try again'
+          }}
+        </button>
+      </section>
+
       <ApplicationTailoringPanel
+        v-else
         :application="application"
         :request-state="tailoring.state.value"
         @recovery-requested="handleTailoringRecovery"
@@ -449,7 +716,11 @@ onBeforeUnmount(() =>
           <button
             type="button"
             class="border-danger/30 bg-danger/12 text-danger hover:bg-danger/18 focus-visible:outline-focus min-h-11 shrink-0 rounded-xl border px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-            :disabled="editing.isBusy.value || tailoring.isBusy.value"
+            :disabled="
+              editing.isBusy.value ||
+              tailoring.isBusy.value ||
+              workingCopyActions.isBusy.value
+            "
             @click="openDeletionDialog"
           >
             Delete application
@@ -464,6 +735,16 @@ onBeforeUnmount(() =>
         @close="closeDeletionDialog"
         @deleted="handleApplicationDeleted"
         @recovery-requested="handleDeletionRecovery"
+      />
+
+      <ApplicationWorkingCopySourcePreviewDialog
+        v-if="sourcePreviewOpen && currentWorkingCopyReview"
+        :application-id="applicationId"
+        :filename="currentWorkingCopyReview.source.filename"
+        :open="true"
+        @close="sourcePreviewOpen = false"
+        @focus-fallback-requested="focusWorkingCopyReview"
+        @recovery-requested="handleSourcePreviewRecovery"
       />
     </template>
 
