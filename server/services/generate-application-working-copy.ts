@@ -46,6 +46,7 @@ export type GenerateApplicationWorkingCopyErrorKind =
   | 'operation-unavailable'
   | 'provider-unavailable'
   | 'working-copy-immutable'
+  | 'working-copy-already-exists'
   | 'working-copy-invalid'
   | 'working-copy-unavailable'
 
@@ -79,6 +80,11 @@ export interface GenerateApplicationWorkingCopyDependencies {
     context: ProductDataRepositoryContext,
     applicationId: string,
   ): ReturnType<typeof prepareApplicationTailoring>
+}
+
+export interface GenerateApplicationWorkingCopyOptions {
+  mode?: 'initial' | 'revision'
+  revisionGuidance?: string
 }
 
 const defaultDependencies: GenerateApplicationWorkingCopyDependencies = {
@@ -180,12 +186,64 @@ const createProvenance = (
     sourceResumeSha256: preparation.interpretation.sourceResumeSha256,
   })
 
+const requireExpectedWorkingCopyState = async (
+  context: ProductDataRepositoryContext,
+  applicationId: string,
+  options: GenerateApplicationWorkingCopyOptions,
+  dependencies: GenerateApplicationWorkingCopyDependencies,
+): Promise<void> => {
+  let repository: TailoringWorkingCopiesRepository
+
+  try {
+    repository = dependencies.createWorkingCopiesRepository(context)
+  } catch (error) {
+    throw createServiceError('working-copy-unavailable', error)
+  }
+
+  let current: Awaited<
+    ReturnType<TailoringWorkingCopiesRepository['findCurrent']>
+  >
+
+  try {
+    current = await repository.findCurrent(applicationId)
+  } catch (error) {
+    throw createServiceError('working-copy-unavailable', error)
+  }
+
+  if (options.mode === 'revision') {
+    if (current === null) {
+      throw createServiceError('working-copy-unavailable')
+    }
+
+    if (current.state === 'accepted') {
+      throw createServiceError('working-copy-immutable')
+    }
+
+    return
+  }
+
+  if (current !== null) {
+    throw createServiceError(
+      current.state === 'accepted'
+        ? 'working-copy-immutable'
+        : 'working-copy-already-exists',
+    )
+  }
+}
+
 export async function generateApplicationWorkingCopy(
   context: ProductDataRepositoryContext,
   applicationId: string,
   dependencies: GenerateApplicationWorkingCopyDependencies = defaultDependencies,
+  options: GenerateApplicationWorkingCopyOptions = {},
 ): Promise<PersistedCurrentWorkingCopy> {
   await preflightApplication(context, applicationId, dependencies)
+  await requireExpectedWorkingCopyState(
+    context,
+    applicationId,
+    options,
+    dependencies,
+  )
 
   const now = dependencies.now()
   const leaseExpiresAt = new Date(
@@ -250,6 +308,7 @@ export async function generateApplicationWorkingCopy(
         createTailoringWorkingCopyRequest({
           analysis,
           jobDescription: preparation.analysisRequest.jobDescription,
+          revisionGuidance: options.revisionGuidance,
           sourceResume: preparation.interpretation.structuredContent,
         }),
       )

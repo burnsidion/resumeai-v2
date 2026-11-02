@@ -70,6 +70,7 @@ const createInstructions = (): string =>
     'Only rewrite, omit, or reorder source-backed text within its existing section.',
     'Do not invent or alter protected facts, contact details, layouts, database identifiers, storage paths, or lifecycle state.',
     'Return a truthful change summary with source evidence for every material change.',
+    'If revision guidance is supplied, treat it as a preference for the complete replacement proposal while preserving all source-backed constraints.',
   ].join(' ')
 
 const serializeProviderInput = (request: TailoringWorkingCopyRequest): string =>

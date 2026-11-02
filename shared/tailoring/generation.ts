@@ -20,6 +20,7 @@ export const tailoringGenerationEndpointErrorCodeSchema = z.enum([
   'invalid-application-id',
   'tailoring-in-progress',
   'tailoring-unavailable',
+  'working-copy-already-exists',
   'working-copy-immutable',
 ])
 

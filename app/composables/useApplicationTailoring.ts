@@ -144,6 +144,14 @@ const createEndpointFailure = ({
         recovery: 'refresh-application',
         retryable: false,
       }
+    case 'working-copy-already-exists':
+      return {
+        code,
+        message:
+          'A working copy is already available for review. Refresh this application to see it.',
+        recovery: 'refresh-application',
+        retryable: false,
+      }
   }
 }
 

@@ -60,6 +60,14 @@ const toTailoringServiceEndpointError = (
     )
   }
 
+  if (error.kind === 'working-copy-already-exists') {
+    return createTailoringEndpointError(
+      'working-copy-already-exists',
+      409,
+      'A working copy is already available for review.',
+    )
+  }
+
   return createTailoringEndpointError(
     'tailoring-unavailable',
     503,
